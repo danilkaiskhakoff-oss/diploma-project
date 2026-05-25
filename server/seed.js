@@ -2,95 +2,102 @@ const db = require('./db');
 
 // Ждем инициализации БД
 setTimeout(() => {
-  console.log('Добавляем демо-данные...');
+  console.log('Очищаем старые демо-данные...');
 
-  // 1. Создаем преподавателя
-  db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES ('teacher1', '123', 'teacher')`, function () {
-    const teacherId = this.lastID || 1;
-    console.log('Преподаватель создан/найден, ID:', teacherId);
+  // Удаляем всё, кроме пользователей teacher1 и student1
+  db.serialize(() => {
+    db.run(`DELETE FROM submissions`);
+    db.run(`DELETE FROM assignments`);
+    db.run(`DELETE FROM progress`);
+    db.run(`DELETE FROM enrollments`);
+    db.run(`DELETE FROM lessons`);
+    db.run(`DELETE FROM courses`);
+    db.run(`DELETE FROM subjects`);
+    // Удаляем всех пользователей, кроме teacher1 и student1
+    db.run(`DELETE FROM users WHERE username NOT IN ('teacher1', 'student1')`);
 
-    // 2. Создаем предмет
-    db.run(`INSERT OR IGNORE INTO subjects (name, description, theme_color, teacher_id) VALUES ('Кибербезопасность', 'Основы защиты информации и безопасного поведения в сети', '#3b82f6', ?)`, [teacherId], function () {
-      const subjectId = this.lastID || 1;
-      console.log('Предмет создан/найден, ID:', subjectId);
+    console.log('База очищена. Добавляем новые демо-данные...');
 
-      // 3. Создаем курсы
-      const courses = [
-        { title: 'Введение в кибербезопасность', description: 'Базовые понятия и терминология' },
-        { title: 'Защита личных данных', description: 'Как защитить свои данные в интернете' },
-        { title: 'Фишинг и социальная инженерия', description: 'Распознавание и предотвращение атак' },
-      ];
+    // 1. Создаем преподавателя (если удален)
+    db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES ('teacher1', '123', 'teacher')`, function () {
+      const teacherId = this.lastID || 1;
 
-      let created = 0;
-      courses.forEach((c, idx) => {
-        db.run(`INSERT INTO courses (subject_id, title, description) VALUES (?, ?, ?)`, [subjectId, c.title, c.description], function () {
-          const courseId = this.lastID;
-          console.log(`Курс "${c.title}" создан, ID:`, courseId);
+      // 2. Создаем студента (если удален)
+      db.run(`INSERT OR IGNORE INTO users (username, password, role) VALUES ('student1', '123', 'student')`, function () {
+        const studentId = this.lastID || 2;
 
-          // 4. Добавляем уроки в каждый курс
-          if (idx === 0) {
-            // Курс 1: Введение
-            const lessons1 = [
-              { title: 'Что такое кибербезопасность', type: 'text', content: 'Кибербезопасность — это практика защиты систем, сетей и программ от цифровых атак.\n\nЭти атаки обычно направлены на доступ к конфиденциальной информации, её изменение или уничтожение.\n\nОсновные цели кибербезопасности:\n• Конфиденциальность — данные доступны только авторизованным лицам\n• Целостность — данные не изменены несанкционированно\n• Доступность — данные доступны когда нужны' },
-              { title: 'Виды угроз', type: 'text', content: 'Основные виды киберугроз:\n\n1. Вирусы и вредоносное ПО\n2. Фишинг — мошенничество через электронную почту\n3. DDoS-атаки — перегрузка серверов запросами\n4. Взлом паролей\n5. Утечки данных\n\nКаждый вид угрозы требует своих методов защиты.' },
-              { title: 'Видео: Основы безопасности', type: 'video', content: JSON.stringify({ text: 'Посмотрите видео и ответьте на вопросы после него.', url: 'https://rutube.ru/video/3e3364e4e4e3e3364e4e/' }), },
-              { title: 'Тест: Основы', type: 'quiz', content: JSON.stringify([
-                { question: 'Что такое кибербезопасность?', options: ['Защита от цифровых атак', 'Вид спорта', 'Настройка компьютера', 'Антивирус'], correctIndex: 0 },
-                { question: 'Что такое фишинг?', options: ['Вид рыбалки', 'Мошенничество через email', 'Программа для защиты', 'Тип вируса'], correctIndex: 1 },
-                { question: 'Что означает конфиденциальность?', options: ['Данные доступны всем', 'Данные доступны только авторизованным', 'Данные удалены', 'Данные зашифрованы'], correctIndex: 1 },
-              ]) },
-            ];
-            addLessons(courseId, lessons1);
-          }
+        // 3. Создаем предмет
+        db.run(`INSERT INTO subjects (name, description, theme_color, teacher_id) VALUES ('Программирование на Python', 'Изучение основ программирования с нуля', '#10b981', ?)`, [teacherId], function () {
+          const subjectId = this.lastID;
 
-          if (idx === 1) {
-            // Курс 2: Защита данных
-            const lessons2 = [
-              { title: 'Пароли и их защита', type: 'text', content: 'Правила создания надежного пароля:\n\n• Минимум 12 символов\n• Используйте буквы, цифры и спецсимволы\n• Не используйте личные данные (дата рождения, имя)\n• Не используйте один пароль для всех сайтов\n• Используйте менеджер паролей\n\nПример надежного пароля: K#9mP$vL2xQ!' },
-              { title: 'Двухфакторная аутентификация', type: 'text', content: 'Двухфакторная аутентификация (2FA) — это дополнительный уровень защиты.\n\nЧто нужно для входа:\n1. Что-то, что вы знаете (пароль)\n2. Что-то, что у вас есть (телефон, ключ)\n\nГде включать 2FA:\n• Почта (Gmail, Яндекс)\n• Социальные сети\n• Банковские приложения\n• Мессенджеры' },
-              { title: 'Тест: Защита данных', type: 'quiz', content: JSON.stringify([
-                { question: 'Какой пароль самый надежный?', options: ['123456', 'password', 'K#9mP$vL2xQ!', 'qwerty'], correctIndex: 2 },
-                { question: 'Что такое 2FA?', options: ['Два пароля', 'Дополнительный уровень защиты', 'Два аккаунта', 'Двойное шифрование'], correctIndex: 1 },
-                { question: 'Где нужно включать 2FA?', options: ['Нигде', 'Только в почте', 'Во всех важных сервисах', 'Только в банке'], correctIndex: 2 },
-              ]) },
-            ];
-            addLessons(courseId, lessons2);
-          }
+          // 4. Создаем курсы
+          const courses = [
+            { title: 'Введение в Python', description: 'Переменные, типы данных, ввод/вывод' },
+            { title: 'Условные конструкции', description: 'if, else, elif и логические операции' },
+            { title: 'Циклы', description: 'for, while, break, continue' },
+          ];
 
-          if (idx === 2) {
-            // Курс 3: Фишинг
-            const lessons3 = [
-              { title: 'Что такое фишинг', type: 'text', content: 'Фишинг — это вид интернет-мошенничества.\n\nЗлоумышленники притворяются доверенными лицами и пытаются:\n• Получить ваши пароли\n• Узнать данные банковских карт\n• Заставить скачать вирус\n\nПризнаки фишинга:\n• Срочность ("Срочно подтвердите данные!")\n• Ошибки в тексте и адресе отправителя\n• Подозрительные ссылки\n• Просьба перейти по ссылке и ввести данные' },
-              { title: 'Примеры фишинговых писем', type: 'image', content: JSON.stringify({ text: 'Обратите внимание на подозрительные элементы в письмах: неправильный адрес отправителя, ошибки, срочность.', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Phishing_Lure.png/800px-Phishing_Lure.png' }), },
-              { title: 'Социальная инженерия', type: 'text', content: 'Социальная инженерия — это манипуляция людьми для получения информации.\n\nОсновные приемы:\n• Претекстинг — создание выдуманного сценария\n• Байтинг — предложение чего-то привлекательного\n• Кви про кво — предложение помощи\n• Tailgating — проход за авторизованным лицом\n\nЗащита: всегда проверяйте личность собеседника и не сообщайте конфиденциальную информацию.' },
-              { title: 'Финальный тест: Фишинг', type: 'quiz', content: JSON.stringify([
-                { question: 'Что такое фишинг?', options: ['Вид спорта', 'Интернет-мошенничество', 'Антивирус', 'Тип шифрования'], correctIndex: 1 },
-                { question: 'Какой признак фишинга?', options: ['Правильное имя', 'Срочность в сообщении', 'Официальный логотип', 'Грамотный текст'], correctIndex: 1 },
-                { question: 'Что такое социальная инженерия?', options: ['Изучение общества', 'Манипуляция людьми', 'Вид программирования', 'Защита данных'], correctIndex: 1 },
-                { question: 'Как защититься от фишинга?', options: ['Открывать все письма', 'Проверять отправителя и ссылки', 'Игнорировать всё', 'Отключить интернет'], correctIndex: 1 },
-              ]) },
-            ];
-            addLessons(courseId, lessons3);
-          }
+          let created = 0;
+          courses.forEach((c, idx) => {
+            db.run(`INSERT INTO courses (subject_id, title, description) VALUES (?, ?, ?)`, [subjectId, c.title, c.description], function () {
+              const courseId = this.lastID;
 
-          created++;
-          if (created === 3) {
-            console.log('\n✅ Демо-данные добавлены!');
-            console.log('Логин преподавателя: teacher1 / 123');
-            console.log('Предмет: Кибербезопасность');
-            console.log('Курсов: 3, Уроков: 10');
-            process.exit(0);
-          }
+              // Записываем студента на курс
+              db.run(`INSERT INTO enrollments (user_id, course_id) VALUES (?, ?)`, [studentId, courseId]);
+
+              const lessons = [];
+              if (idx === 0) {
+                lessons.push(
+                  { title: 'Что такое Python', type: 'text', content: 'Python — это высокоуровневый язык программирования.\n\nОн используется для:\n• Веб-разработки\n• Анализа данных\n• Искусственного интеллекта\n• Автоматизации\n\nПример кода:\nprint("Hello, World!")' },
+                  { title: 'Переменные и типы', type: 'text', content: 'В Python есть несколько типов данных:\n\n• str — строка: "Привет"\n• int — целое число: 42\n• float — дробное число: 3.14\n• bool — логическое: True/False\n\nПример:\nname = "Алекс"\nage = 20\nheight = 1.75' },
+                  { title: 'Тест: Основы', type: 'quiz', content: JSON.stringify([
+                    { question: 'Какой тип данных у числа 3.14?', options: ['int', 'float', 'str', 'bool'], correctIndex: 1 },
+                    { question: 'Что выведет print("Hello")?', options: ['Error', 'Hello', 'hello', 'HELLO'], correctIndex: 1 },
+                  ]) }
+                );
+              }
+              if (idx === 1) {
+                lessons.push(
+                  { title: 'Оператор if', type: 'text', content: 'Условная конструкция позволяет выполнять код по условию.\n\nПример:\nage = 18\nif age >= 18:\n    print("Совершеннолетний")\nelse:\n    print("Несовершеннолетний")' },
+                  { title: 'Логические операции', type: 'text', content: 'В Python есть логические операторы:\n\n• and — И\n• or — ИЛИ\n• not — НЕ\n\nПример:\nage = 25\nif age >= 18 and age < 65:\n    print("Трудоспособный")' },
+                  { title: 'Тест: Условия', type: 'quiz', content: JSON.stringify([
+                    { question: 'Какой оператор означает "И"?', options: ['or', 'not', 'and', 'if'], correctIndex: 2 },
+                    { question: 'Что выведет 5 > 3?', options: ['False', 'True', 'Error', '5'], correctIndex: 1 },
+                  ]) }
+                );
+              }
+              if (idx === 2) {
+                lessons.push(
+                  { title: 'Цикл for', type: 'text', content: 'Цикл for используется для перебора элементов.\n\nПример:\nfor i in range(5):\n    print(i)\n\nВыведет: 0, 1, 2, 3, 4' },
+                  { title: 'Цикл while', type: 'text', content: 'Цикл while выполняется пока условие истинно.\n\nПример:\ncount = 0\nwhile count < 5:\n    print(count)\n    count += 1' },
+                  { title: 'Тест: Циклы', type: 'quiz', content: JSON.stringify([
+                    { question: 'Сколько раз выполнится for i in range(3)?', options: ['2', '3', '4', '1'], correctIndex: 1 },
+                    { question: 'Что делает break?', options: ['Пропускает итерацию', 'Прерывает цикл', 'Начинает заново', 'Ничего'], correctIndex: 1 },
+                  ]) }
+                );
+              }
+
+              let lessonsCreated = 0;
+              lessons.forEach((l) => {
+                db.run(`INSERT INTO lessons (course_id, title, content, type) VALUES (?, ?, ?, ?)`, [courseId, l.title, l.content, l.type], function () {
+                  lessonsCreated++;
+                  if (lessonsCreated === lessons.length) {
+                    created++;
+                    if (created === 3) {
+                      console.log('\n✅ Демо-данные добавлены!');
+                      console.log('Преподаватель: teacher1 / 123');
+                      console.log('Студент: student1 / 123');
+                      console.log('Предмет: Программирование на Python');
+                      console.log('Курсов: 3, Уроков: 9');
+                      process.exit(0);
+                    }
+                  }
+                });
+              });
+            });
+          });
         });
       });
     });
   });
 }, 500);
-
-function addLessons(courseId, lessons) {
-  lessons.forEach((l, i) => {
-    db.run(`INSERT INTO lessons (course_id, title, content, type) VALUES (?, ?, ?, ?)`, [courseId, l.title, l.content, l.type], function () {
-      console.log(`  Урок "${l.title}" добавлен в курс ${courseId}`);
-    });
-  });
-}
