@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://diploma-project-2mei.onrender.com/api';
 
 function Auth({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
