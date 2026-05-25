@@ -9,8 +9,19 @@ const progressRoutes = require('./routes/progress');
 const statsRoutes = require('./routes/stats');
 const homeworkRoutes = require('./routes/homework');
 
-// ...
+const app = express();
+const PORT = process.env.PORT || 5000;
 
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/lessons', lessonRoutes);
+app.use('/api/progress', progressRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/homework', homeworkRoutes);
 
