@@ -196,11 +196,11 @@ function Desktop({ simulation, onComplete }) {
             <div className="absolute top-4 left-4 flex flex-col gap-4 z-10">
               <DesktopIcon
                 label="Почта"
-                emoji=""
+                emoji="📧"
                 onClick={() => setMailOpen(true)}
               />
               <DesktopIcon label="Корзина" emoji="🗑️" />
-              <DesktopIcon label="Мой компьютер" emoji="" />
+              <DesktopIcon label="Мой компьютер" emoji="💻" />
             </div>
 
             {/* Threat Meter */}
