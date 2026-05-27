@@ -104,37 +104,45 @@ function Map3D({ level, onReset }) {
     setSelectedCheckpoint(null);
   };
 
+  const isSimulation = selectedCheckpoint?.type === 'simulation';
+
   return (
     <div className="relative w-screen h-screen bg-[#0a0a0f] overflow-hidden">
-      <Canvas camera={{ position: [0, 4, 14], fov: 60 }} gl={{ antialias: true }}>
-        <color attach="background" args={['#0a0a0f']} />
-        <fog attach="fog" args={['#0a0a0f', 20, 50]} />
-        <Suspense fallback={null}>
-          <Scene
-            level={level}
-            onCheckpointClick={handleCheckpointClick}
-            completedCheckpoints={completedCheckpoints}
-          />
-        </Suspense>
-      </Canvas>
+      {!isSimulation && (
+        <Canvas camera={{ position: [0, 4, 14], fov: 60 }} gl={{ antialias: true }}>
+          <color attach="background" args={['#0a0a0f']} />
+          <fog attach="fog" args={['#0a0a0f', 20, 50]} />
+          <Suspense fallback={null}>
+            <Scene
+              level={level}
+              onCheckpointClick={handleCheckpointClick}
+              completedCheckpoints={completedCheckpoints}
+            />
+          </Suspense>
+        </Canvas>
+      )}
 
-      <div className="absolute top-4 left-4 z-10">
-        <button
-          onClick={onReset}
-          className="px-4 py-2 bg-[#1a1a2e] border border-gray-700 rounded-lg text-gray-300 hover:text-white hover:border-[#00ff88] transition text-sm"
-        >
-          ← Назад к уровням
-        </button>
-      </div>
+      {!isSimulation && (
+        <>
+          <div className="absolute top-4 left-4 z-10">
+            <button
+              onClick={onReset}
+              className="px-4 py-2 bg-[#1a1a2e] border border-gray-700 rounded-lg text-gray-300 hover:text-white hover:border-[#00ff88] transition text-sm"
+            >
+              ← Назад к уровням
+            </button>
+          </div>
 
-      <div className="absolute top-4 right-4 z-10 bg-[#1a1a2e]/80 backdrop-blur px-4 py-2 rounded-lg border border-gray-800">
-        <h2 className="text-lg font-bold" style={{ color: level.color }}>{level.name}</h2>
-        <p className="text-xs text-gray-400">{completedCheckpoints.length}/{level.checkpoints.length} пройдено</p>
-      </div>
+          <div className="absolute top-4 right-4 z-10 bg-[#1a1a2e]/80 backdrop-blur px-4 py-2 rounded-lg border border-gray-800">
+            <h2 className="text-lg font-bold" style={{ color: level.color }}>{level.name}</h2>
+            <p className="text-xs text-gray-400">{completedCheckpoints.length}/{level.checkpoints.length} пройдено</p>
+          </div>
 
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 bg-[#1a1a2e]/60 backdrop-blur px-4 py-2 rounded-lg border border-gray-800 text-center">
-        <p className="text-xs text-gray-400">🖱️ Вращайте камеру • Нажмите на точку</p>
-      </div>
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 bg-[#1a1a2e]/60 backdrop-blur px-4 py-2 rounded-lg border border-gray-800 text-center">
+            <p className="text-xs text-gray-400">🖱️ Вращайте камеру • Нажмите на точку</p>
+          </div>
+        </>
+      )}
 
       <AnimatePresence>
         {selectedCheckpoint && (
