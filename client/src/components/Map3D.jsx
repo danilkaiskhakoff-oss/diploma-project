@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect, Suspense, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { useState, useRef, Suspense } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, Stars, Html } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
-import * as THREE from 'three';
 import CheckpointScene from './CheckpointScene';
 
-function CheckpointNode({ checkpoint, position, color, onClick, isCompleted, labelRef }) {
+function CheckpointNode({ checkpoint, position, color, onClick, isCompleted }) {
   const meshRef = useRef();
   const [hovered, setHovered] = useState(false);
 
@@ -17,7 +16,7 @@ function CheckpointNode({ checkpoint, position, color, onClick, isCompleted, lab
   });
 
   return (
-    <group position={position} ref={labelRef}>
+    <group position={position}>
       <mesh
         ref={meshRef}
         onClick={onClick}
@@ -32,21 +31,35 @@ function CheckpointNode({ checkpoint, position, color, onClick, isCompleted, lab
           wireframe={!isCompleted}
         />
       </mesh>
-      <mesh position={[0, 0, 0]}>
+      <mesh>
         <icosahedronGeometry args={[0.9, 0]} />
         <meshBasicMaterial color={color} transparent opacity={0.08} wireframe />
       </mesh>
+      <Html position={[0, 1.2, 0]} center distanceFactor={10}>
+        <div
+          className="text-xs font-bold px-2 py-1 rounded whitespace-nowrap"
+          style={{
+            color: isCompleted ? '#00ff88' : color,
+            textShadow: '0 0 10px rgba(0,0,0,0.9)',
+            backgroundColor: 'rgba(10,10,15,0.7)',
+            backdropFilter: 'blur(4px)',
+            pointerEvents: 'none',
+          }}
+        >
+          {isCompleted ? '✓ ' : ''}{checkpoint.title}
+        </div>
+      </Html>
     </group>
   );
 }
 
-function Scene({ level, onCheckpointClick, completedCheckpoints, nodeRefs }) {
+function Scene({ level, onCheckpointClick, completedCheckpoints }) {
   return (
     <>
       <ambientLight intensity={0.3} />
       <pointLight position={[10, 10, 10]} intensity={1.5} />
       <pointLight position={[-10, -10, -10]} intensity={0.5} color={level.color} />
-      <pointLight position={[0, 0, 0]} intensity={0.3} color="#ffffff" />
+      <pointLight position={[0, 0, 0]} intensity={0.3} />
       <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
       {level.checkpoints.map((checkpoint, index) => {
         const angle = (index / level.checkpoints.length) * Math.PI * 2;
@@ -62,7 +75,6 @@ function Scene({ level, onCheckpointClick, completedCheckpoints, nodeRefs }) {
             color={level.color}
             onClick={() => onCheckpointClick(checkpoint)}
             isCompleted={completedCheckpoints.includes(checkpoint.id)}
-            labelRef={(el) => { if (el) nodeRefs.current[index] = el; }}
           />
         );
       })}
@@ -77,82 +89,9 @@ function Scene({ level, onCheckpointClick, completedCheckpoints, nodeRefs }) {
   );
 }
 
-function Labels({ level, nodeRefs, canvasRef, completedCheckpoints }) {
-  const [positions, setPositions] = useState([]);
-  const { camera, size, gl } = useThree();
-
-  useFrame(() => {
-    const newPositions = [];
-    nodeRefs.current.forEach((ref, index) => {
-      if (ref && ref.parent) {
-        const worldPos = new THREE.Vector3();
-        ref.getWorldPosition(worldPos);
-        worldPos.y += 1.2;
-
-        const screenPos = worldPos.clone().project(camera);
-        const x = ((screenPos.x + 1) / 2) * size.width;
-        const y = ((-screenPos.y + 1) / 2) * size.height;
-
-        newPositions.push({
-          x,
-          y,
-          title: level.checkpoints[index].title,
-          completed: completedCheckpoints.includes(level.checkpoints[index].id),
-        });
-      }
-    });
-    setPositions(newPositions);
-  });
-
-  return (
-    <>
-      {positions.map((pos, i) => (
-        <div
-          key={i}
-          className="absolute pointer-events-none select-none"
-          style={{
-            left: pos.x,
-            top: pos.y,
-            transform: 'translate(-50%, -50%)',
-            zIndex: 5,
-          }}
-        >
-          <div className="text-center whitespace-nowrap">
-            <div
-              className="text-xs font-bold px-2 py-1 rounded"
-              style={{
-                color: pos.completed ? '#00ff88' : level.color,
-                textShadow: '0 0 10px rgba(0,0,0,0.8)',
-                backgroundColor: 'rgba(10,10,15,0.6)',
-                backdropFilter: 'blur(4px)',
-              }}
-            >
-              {pos.completed ? '✓ ' : ''}{pos.title}
-            </div>
-          </div>
-        </div>
-      ))}
-    </>
-  );
-}
-
-function LoadingFallback() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0f]">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-[#00ff88] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-400">Загрузка сцены...</p>
-      </div>
-    </div>
-  );
-}
-
 function Map3D({ level, onReset }) {
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
   const [completedCheckpoints, setCompletedCheckpoints] = useState([]);
-  const [canvasReady, setCanvasReady] = useState(false);
-  const nodeRefs = useRef([]);
-  const canvasContainerRef = useRef();
 
   const handleCheckpointClick = (checkpoint) => {
     setSelectedCheckpoint(checkpoint);
@@ -165,38 +104,19 @@ function Map3D({ level, onReset }) {
     setSelectedCheckpoint(null);
   };
 
-  const handleCanvasCreated = () => {
-    setCanvasReady(true);
-  };
-
   return (
     <div className="relative w-screen h-screen bg-[#0a0a0f] overflow-hidden">
-      <div ref={canvasContainerRef} className="absolute inset-0">
-        <Canvas
-          camera={{ position: [0, 4, 14], fov: 60 }}
-          onCreated={handleCanvasCreated}
-          gl={{ antialias: true, alpha: false }}
-        >
-          <color attach="background" args={['#0a0a0f']} />
-          <fog attach="fog" args={['#0a0a0f', 20, 50]} />
-          <Suspense fallback={null}>
-            <Scene
-              level={level}
-              onCheckpointClick={handleCheckpointClick}
-              completedCheckpoints={completedCheckpoints}
-              nodeRefs={nodeRefs}
-            />
-          </Suspense>
-          <Labels
+      <Canvas camera={{ position: [0, 4, 14], fov: 60 }} gl={{ antialias: true }}>
+        <color attach="background" args={['#0a0a0f']} />
+        <fog attach="fog" args={['#0a0a0f', 20, 50]} />
+        <Suspense fallback={null}>
+          <Scene
             level={level}
-            nodeRefs={nodeRefs}
-            canvasRef={canvasContainerRef}
+            onCheckpointClick={handleCheckpointClick}
             completedCheckpoints={completedCheckpoints}
           />
-        </Canvas>
-      </div>
-
-      {!canvasReady && <LoadingFallback />}
+        </Suspense>
+      </Canvas>
 
       <div className="absolute top-4 left-4 z-10">
         <button
@@ -213,7 +133,7 @@ function Map3D({ level, onReset }) {
       </div>
 
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 bg-[#1a1a2e]/60 backdrop-blur px-4 py-2 rounded-lg border border-gray-800 text-center">
-        <p className="text-xs text-gray-400">🖱️ Вращайте камеру мышкой • Нажмите на точку для изучения</p>
+        <p className="text-xs text-gray-400">🖱️ Вращайте камеру • Нажмите на точку</p>
       </div>
 
       <AnimatePresence>
