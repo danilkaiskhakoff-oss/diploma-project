@@ -33,7 +33,7 @@ function MailApp({ simulation, hintsEnabled, onClose, onComplete }) {
       setShowAnalysis(false);
       setUserChoice(null);
     } else {
-      onComplete(analyzedEmails);
+      onComplete();
     }
   };
 

@@ -10,7 +10,7 @@ function Desktop({ simulation, onComplete }) {
   const [hintsEnabled, setHintsEnabled] = useState(true);
   const [mailOpen, setMailOpen] = useState(false);
   const [bootPhase, setBootPhase] = useState('black');
-  const [shutdownPhase, setShutdownPhase] = useState(null);
+  const [isShuttingDown, setIsShuttingDown] = useState(false);
 
   useEffect(() => {
     const timer1 = setTimeout(() => setBootPhase('logo'), 500);
@@ -29,19 +29,57 @@ function Desktop({ simulation, onComplete }) {
   };
 
   const handleShutdown = () => {
-    setShutdownPhase('shutting-down');
+    setIsShuttingDown(true);
+    // Show shutdown animation for 2.5 seconds, then exit
     setTimeout(() => {
-      setShutdownPhase('black');
-      setTimeout(() => {
-        onComplete();
-      }, 1000);
-    }, 2000);
+      onComplete();
+    }, 2500);
   };
+
+  // If shutting down, show only the shutdown screen
+  if (isShuttingDown) {
+    return (
+      <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#1a3a5c] to-[#0a1628]">
+        <motion.div
+          className="flex flex-col items-center justify-center h-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.div
+            className="text-white text-xl font-light mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            Завершение работы...
+          </motion.div>
+          <div className="flex gap-2 justify-center">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <motion.div
+                key={i}
+                className="w-3 h-3 rounded-full bg-white"
+                animate={{
+                  opacity: [0.3, 1, 0.3],
+                  scale: [0.8, 1.2, 0.8]
+                }}
+                transition={{
+                  duration: 1.2,
+                  repeat: Infinity,
+                  delay: i * 0.15
+                }}
+              />
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full overflow-hidden">
       <AnimatePresence mode="wait">
-        {bootPhase === 'black' && !shutdownPhase && (
+        {bootPhase === 'black' && (
           <motion.div
             key="black"
             className="absolute inset-0 bg-black"
@@ -50,54 +88,7 @@ function Desktop({ simulation, onComplete }) {
           />
         )}
 
-        {shutdownPhase === 'black' && (
-          <motion.div
-            key="shutdown-black"
-            className="absolute inset-0 bg-black"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          />
-        )}
-
-        {shutdownPhase === 'shutting-down' && (
-          <motion.div
-            key="shutting-down"
-            className="absolute inset-0 bg-gradient-to-b from-[#1a3a5c] to-[#0a1628] flex flex-col items-center justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <motion.div
-              className="text-white text-xl font-light mb-8"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              Завершение работы...
-            </motion.div>
-            <div className="flex gap-2 justify-center">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <motion.div
-                  key={i}
-                  className="w-3 h-3 rounded-full bg-white"
-                  animate={{
-                    opacity: [0.3, 1, 0.3],
-                    scale: [0.8, 1.2, 0.8]
-                  }}
-                  transition={{
-                    duration: 1.2,
-                    repeat: Infinity,
-                    delay: i * 0.15
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {bootPhase === 'logo' && !shutdownPhase && (
+        {bootPhase === 'logo' && (
           <motion.div
             key="logo"
             className="absolute inset-0 bg-black flex items-center justify-center"
@@ -138,7 +129,7 @@ function Desktop({ simulation, onComplete }) {
           </motion.div>
         )}
 
-        {bootPhase === 'welcome' && !shutdownPhase && (
+        {bootPhase === 'welcome' && (
           <motion.div
             key="welcome"
             className="absolute inset-0 bg-gradient-to-b from-[#1a3a5c] to-[#0a1628] flex items-center justify-center"
@@ -177,7 +168,7 @@ function Desktop({ simulation, onComplete }) {
           </motion.div>
         )}
 
-        {bootPhase === 'desktop' && !shutdownPhase && (
+        {bootPhase === 'desktop' && (
           <motion.div
             key="desktop"
             className="absolute inset-0"
@@ -205,7 +196,7 @@ function Desktop({ simulation, onComplete }) {
             <div className="absolute top-4 left-4 flex flex-col gap-4 z-10">
               <DesktopIcon
                 label="Почта"
-                emoji="📧"
+                emoji=""
                 onClick={() => setMailOpen(true)}
               />
               <DesktopIcon label="Корзина" emoji="🗑️" />

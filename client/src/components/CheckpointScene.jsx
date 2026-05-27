@@ -18,15 +18,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
       <div className="absolute inset-0 z-20">
         <Desktop
           simulation={checkpoint.simulation}
-          onComplete={(analyzedEmails) => {
-            // Calculate score based on correct answers
-            const correctCount = analyzedEmails.filter(id => {
-              const email = checkpoint.simulation.emails.find(e => e.id === id);
-              return email && (
-                (email.isPhishing && analyzedEmails.includes(id)) ||
-                (!email.isPhishing && analyzedEmails.includes(id))
-              );
-            }).length;
+          onComplete={() => {
             onClose();
           }}
         />
