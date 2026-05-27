@@ -10,6 +10,7 @@ function Desktop({ simulation, onComplete }) {
   const [hintsEnabled, setHintsEnabled] = useState(true);
   const [mailOpen, setMailOpen] = useState(false);
   const [bootPhase, setBootPhase] = useState('black');
+  const [shutdownPhase, setShutdownPhase] = useState(null);
 
   useEffect(() => {
     const timer1 = setTimeout(() => setBootPhase('logo'), 500);
@@ -27,10 +28,20 @@ function Desktop({ simulation, onComplete }) {
     setShowHintToggle(false);
   };
 
+  const handleShutdown = () => {
+    setShutdownPhase('shutting-down');
+    setTimeout(() => {
+      setShutdownPhase('black');
+      setTimeout(() => {
+        onComplete();
+      }, 1000);
+    }, 2000);
+  };
+
   return (
     <div className="relative w-full h-full overflow-hidden">
       <AnimatePresence mode="wait">
-        {bootPhase === 'black' && (
+        {bootPhase === 'black' && !shutdownPhase && (
           <motion.div
             key="black"
             className="absolute inset-0 bg-black"
@@ -39,7 +50,54 @@ function Desktop({ simulation, onComplete }) {
           />
         )}
 
-        {bootPhase === 'logo' && (
+        {shutdownPhase === 'black' && (
+          <motion.div
+            key="shutdown-black"
+            className="absolute inset-0 bg-black"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          />
+        )}
+
+        {shutdownPhase === 'shutting-down' && (
+          <motion.div
+            key="shutting-down"
+            className="absolute inset-0 bg-gradient-to-b from-[#1a3a5c] to-[#0a1628] flex flex-col items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <motion.div
+              className="text-white text-xl font-light mb-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              Завершение работы...
+            </motion.div>
+            <div className="flex gap-2 justify-center">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-3 h-3 rounded-full bg-white"
+                  animate={{
+                    opacity: [0.3, 1, 0.3],
+                    scale: [0.8, 1.2, 0.8]
+                  }}
+                  transition={{
+                    duration: 1.2,
+                    repeat: Infinity,
+                    delay: i * 0.15
+                  }}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {bootPhase === 'logo' && !shutdownPhase && (
           <motion.div
             key="logo"
             className="absolute inset-0 bg-black flex items-center justify-center"
@@ -80,7 +138,7 @@ function Desktop({ simulation, onComplete }) {
           </motion.div>
         )}
 
-        {bootPhase === 'welcome' && (
+        {bootPhase === 'welcome' && !shutdownPhase && (
           <motion.div
             key="welcome"
             className="absolute inset-0 bg-gradient-to-b from-[#1a3a5c] to-[#0a1628] flex items-center justify-center"
@@ -119,7 +177,7 @@ function Desktop({ simulation, onComplete }) {
           </motion.div>
         )}
 
-        {bootPhase === 'desktop' && (
+        {bootPhase === 'desktop' && !shutdownPhase && (
           <motion.div
             key="desktop"
             className="absolute inset-0"
@@ -170,7 +228,11 @@ function Desktop({ simulation, onComplete }) {
             </AnimatePresence>
 
             {/* Taskbar */}
-            <Taskbar mailOpen={mailOpen} onMailClick={() => setMailOpen(!mailOpen)} />
+            <Taskbar
+              mailOpen={mailOpen}
+              onMailClick={() => setMailOpen(!mailOpen)}
+              onShutdown={handleShutdown}
+            />
 
             {/* Hint Toggle Modal */}
             <AnimatePresence>
