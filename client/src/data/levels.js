@@ -194,7 +194,69 @@ export const levels = {
       {
         id: 'passwords',
         title: 'Пароли',
-        type: 'theory',
+        type: 'simulation',
+        simulation: {
+          type: 'passwords',
+          commonPasswords: [
+            '123456', 'password', '12345678', 'qwerty', '123456789',
+            '12345', '1234', '111111', '1234567', 'dragon',
+            '123123', 'baseball', 'abc123', 'football', 'monkey',
+            'letmein', '696969', 'shadow', 'master', '666666',
+            'qwertyuiop', '123321', 'mustang', '1234567890', 'michael',
+            '654321', 'pussy', 'superman', '1qaz2wsx', '7777777',
+            '121212', '000000', 'qazwsx', '123qwe', 'killer',
+            'trustno1', 'jordan', 'jennifer', 'zxcvbnm', 'asdfgh',
+            'hunter', 'buster', 'soccer', 'harley', 'batman',
+            'andrew', 'tigger', 'sunshine', 'iloveyou', 'fuckme',
+            '2000', 'charlie', 'robert', 'thomas', 'hockey',
+            'ranger', 'daniel', 'starwars', 'klaster', '112233',
+            'george', 'computer', 'michelle', 'jessica', 'pepper',
+            '1111', 'zxcvbn', '555555', '11111111', '131313',
+            'freedom', '777777', 'pass', 'fuck', 'maggie',
+            '159753', 'aaaaaa', 'ginger', 'princess', 'joshua',
+            'cheese', 'amanda', 'summer', 'love', 'ashley',
+            '6969', 'nicole', 'chelsea', 'biteme', 'matthew',
+            'access', 'yankees', '987654321', 'dallas', 'austin',
+            'thunder', 'taylor', 'matrix', 'mobile', 'test',
+            'guest', 'admin', 'root', 'user', 'login'
+          ],
+          scenarios: [
+            {
+              id: 'weak-password',
+              type: 'hacked',
+              password: '123456',
+              message: 'Вы использовали простой пароль "123456" для всех сайтов. Через неделю ваш email взломали!',
+              consequences: [
+                'Злоумышленники получили доступ к вашей почте',
+                'Они отправили фишинговые письма вашим контактам',
+                'Были украдены личные фотографии и документы',
+                'Ваш аккаунт в социальной сети использовался для рассылки спама'
+              ]
+            },
+            {
+              id: 'medium-password',
+              type: 'warning',
+              password: 'password123',
+              message: 'Ваш пароль "password123" найден в 15,847 утечках данных. Он может быть скомпрометирован!',
+              consequences: [
+                'Пароль есть в публичных базах утечек',
+                'Хакеры могут использовать его для доступа к вашим аккаунтам',
+                'Рекомендуется немедленно сменить пароль'
+              ]
+            },
+            {
+              id: 'strong-password',
+              type: 'success',
+              password: 'K#9mP$vL2xQ!',
+              message: 'Отлично! Вы создали надёжный пароль. Время взлома: 847 миллиардов лет!',
+              consequences: [
+                'Пароль не найден в известных утечках',
+                'Время взлома перебором превышает возраст вселенной',
+                'Ваши данные в безопасности'
+              ]
+            }
+          ]
+        },
         theory: {
           title: 'Как создать надёжный пароль?',
           content: `Правила создания надёжного пароля:
@@ -207,7 +269,7 @@ export const levels = {
 Примеры плохих паролей:
 ❌ 123456
 ❌ password
- qwerty
+❌ qwerty
 ❌ дата рождения
 
 Пример хорошего пароля:

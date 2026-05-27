@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Desktop from './simulations/Desktop';
+import PasswordSimulation from './simulations/PasswordSimulation';
 
 function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -12,18 +13,32 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const quiz = checkpoint.quiz || [];
   const currentQuiz = quiz[currentQuizIndex];
 
-  // If this is a simulation checkpoint, render the Desktop
+  // If this is a simulation checkpoint, render the appropriate simulation
   if (checkpoint.type === 'simulation' && checkpoint.simulation) {
-    return (
-      <div className="absolute inset-0 z-20">
-        <Desktop
-          simulation={checkpoint.simulation}
-          onComplete={() => {
-            onClose();
-          }}
-        />
-      </div>
-    );
+    if (checkpoint.simulation.type === 'phishing') {
+      return (
+        <div className="absolute inset-0 z-20">
+          <Desktop
+            simulation={checkpoint.simulation}
+            onComplete={() => {
+              onClose();
+            }}
+          />
+        </div>
+      );
+    }
+    if (checkpoint.simulation.type === 'passwords') {
+      return (
+        <div className="absolute inset-0 z-20">
+          <PasswordSimulation
+            simulation={checkpoint.simulation}
+            onComplete={() => {
+              onClose();
+            }}
+          />
+        </div>
+      );
+    }
   }
 
   const handleAnswerSelect = (index) => {
