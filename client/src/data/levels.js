@@ -43,7 +43,122 @@ export const levels = {
       {
         id: 'phishing',
         title: 'Фишинг',
-        type: 'scenario',
+        type: 'simulation',
+        simulation: {
+          type: 'phishing',
+          emails: [
+            {
+              id: 1,
+              from: 'security@amaz0n.com',
+              fromName: 'Amazon Security Team',
+              subject: '⚠️ Срочно: Ваш аккаунт будет заблокирован!',
+              date: '15 янв 2024, 09:23',
+              body: {
+                logo: 'amazon',
+                greeting: 'Уважаемый пользователь!',
+                content: 'Мы обнаружили подозрительную активность в вашем аккаунте. Для подтверждения личности перейдите по ссылке ниже в течение 24 часов, иначе ваш аккаунт будет заблокирован.',
+                button: { text: 'Подтвердить аккаунт', url: 'http://amaz0n-security.com/verify' },
+                footer: '© 2024 Amazon.com, Inc.'
+              },
+              isPhishing: true,
+              suspiciousElements: [
+                { id: 'sender', type: 'sender', reason: 'Домен amaz0n.com — подделка. Настоящий домен: amazon.com' },
+                { id: 'urgency', type: 'text', reason: 'Срочность ("24 часа") — манипуляция для паники' },
+                { id: 'link', type: 'link', reason: 'Ссылка ведёт на amaz0n-security.com, а не amazon.com' }
+              ]
+            },
+            {
+              id: 2,
+              from: 'orders@apple.com',
+              fromName: 'Apple Orders',
+              subject: 'Ваш заказ #12345 отправлен',
+              date: '14 янв 2024, 14:05',
+              body: {
+                logo: 'apple',
+                greeting: 'Здравствуйте!',
+                content: 'Ваш заказ #12345 (MacBook Air M2) был отправлен. Ожидаемая дата доставки: 18 января 2024. Отслеживайте посылку по ссылке ниже.',
+                button: { text: 'Отследить заказ', url: 'https://www.apple.com/shop/order/track' },
+                footer: '© 2024 Apple Inc.'
+              },
+              isPhishing: false,
+              suspiciousElements: []
+            },
+            {
+              id: 3,
+              from: 'prize@g00gle.com',
+              fromName: 'Google Rewards',
+              subject: '🎉 Вы выиграли iPhone 15!',
+              date: '13 янв 2024, 11:47',
+              body: {
+                logo: 'google',
+                greeting: 'Поздравляем!',
+                content: 'Вы были выбраны победителем в розыгрыше iPhone 15! Для получения приза заполните форму и оплатите доставку в размере 990₽. Предложение действует 2 часа!',
+                button: { text: 'Получить приз', url: 'http://g00gle-rewards.net/claim' },
+                footer: '© 2024 Google LLC'
+              },
+              isPhishing: true,
+              suspiciousElements: [
+                { id: 'sender', type: 'sender', reason: 'Домен g00gle.com — подделка. Настоящий домен: google.com' },
+                { id: 'urgency', type: 'text', reason: 'Срочность ("2 часа") — манипуляция' },
+                { id: 'payment', type: 'text', reason: 'Просят оплатить доставку — признак мошенничества' },
+                { id: 'link', type: 'link', reason: 'Ссылка ведёт на g00gle-rewards.net, а не google.com' }
+              ]
+            },
+            {
+              id: 4,
+              from: 'privacy@microsoft.com',
+              fromName: 'Microsoft Privacy',
+              subject: 'Обновление политики конфиденциальности',
+              date: '12 янв 2024, 08:00',
+              body: {
+                logo: 'microsoft',
+                greeting: 'Уважаемый пользователь Microsoft!',
+                content: 'Мы обновили нашу политику конфиденциальности. Основные изменения касаются обработки данных в облачных сервисах. Вы можете ознакомиться с полной версией по ссылке ниже.',
+                button: { text: 'Читать изменения', url: 'https://privacy.microsoft.com/updates' },
+                footer: '© 2024 Microsoft Corporation'
+              },
+              isPhishing: false,
+              suspiciousElements: []
+            },
+            {
+              id: 5,
+              from: 'support@paypa1.com',
+              fromName: 'PayPal Support',
+              subject: '⚠️ Подтвердите данные вашей карты',
+              date: '11 янв 2024, 16:32',
+              body: {
+                logo: 'paypal',
+                greeting: 'Уважаемый клиент!',
+                content: 'Мы заметили подозрительную операцию с вашей картой. Для подтверждения владения картой введите её данные и CVV-код по ссылке ниже. Если вы не подтвердите в течение 12 часов, карта будет заблокирована.',
+                button: { text: 'Подтвердить карту', url: 'http://paypa1-secure.net/verify' },
+                footer: '© 2024 PayPal Inc.'
+              },
+              isPhishing: true,
+              suspiciousElements: [
+                { id: 'sender', type: 'sender', reason: 'Домен paypa1.com — подделка (1 вместо l). Настоящий домен: paypal.com' },
+                { id: 'urgency', type: 'text', reason: 'Срочность ("12 часов") — манипуляция' },
+                { id: 'sensitive', type: 'text', reason: 'Просят ввести CVV-код — настоящие сервисы никогда не просят это по email' },
+                { id: 'link', type: 'link', reason: 'Ссылка ведёт на paypa1-secure.net, а не paypal.com' }
+              ]
+            },
+            {
+              id: 6,
+              from: 'meeting@company.com',
+              fromName: 'Иван Петров',
+              subject: 'Приглашение на встречу',
+              date: '10 янв 2024, 10:15',
+              body: {
+                logo: 'company',
+                greeting: 'Привет!',
+                content: 'Приглашаю тебя на встречу по проекту "Кибербезопасность" в пятницу в 15:00. Встреча будет в конференц-зале 305. Повестка: обсуждение новых мер безопасности. Жду тебя!',
+                button: { text: 'Принять приглашение', url: 'https://calendar.company.com/meeting/123' },
+                footer: 'С уважением, Иван Петров\nОтдел информационной безопасности'
+              },
+              isPhishing: false,
+              suspiciousElements: []
+            }
+          ]
+        },
         theory: {
           title: 'Что такое фишинг?',
           content: `Фишинг — это вид интернет-мошенничества, при котором злоумышленники притворяются доверенными лицами.
@@ -92,7 +207,7 @@ export const levels = {
 Примеры плохих паролей:
 ❌ 123456
 ❌ password
-❌ qwerty
+ qwerty
 ❌ дата рождения
 
 Пример хорошего пароля:

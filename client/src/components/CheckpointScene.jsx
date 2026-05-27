@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import Desktop from './simulations/Desktop';
 
 function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -10,6 +11,28 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
 
   const quiz = checkpoint.quiz || [];
   const currentQuiz = quiz[currentQuizIndex];
+
+  // If this is a simulation checkpoint, render the Desktop
+  if (checkpoint.type === 'simulation' && checkpoint.simulation) {
+    return (
+      <div className="absolute inset-0 z-20">
+        <Desktop
+          simulation={checkpoint.simulation}
+          onComplete={(analyzedEmails) => {
+            // Calculate score based on correct answers
+            const correctCount = analyzedEmails.filter(id => {
+              const email = checkpoint.simulation.emails.find(e => e.id === id);
+              return email && (
+                (email.isPhishing && analyzedEmails.includes(id)) ||
+                (!email.isPhishing && analyzedEmails.includes(id))
+              );
+            }).length;
+            onClose();
+          }}
+        />
+      </div>
+    );
+  }
 
   const handleAnswerSelect = (index) => {
     if (showExplanation) return;
@@ -65,7 +88,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
 
               {checkpoint.theory.references && checkpoint.theory.references.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="text-sm font-bold text-gray-400 mb-2">📚 Дополнительные материалы:</h4>
+                  <h4 className="text-sm font-bold text-gray-400 mb-2"> Дополнительные материалы:</h4>
                   <ul className="space-y-2">
                     {checkpoint.theory.references.map((ref, i) => (
                       <li key={i}>
