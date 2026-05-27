@@ -171,7 +171,7 @@ const StartMenu = ({ onShutdown }) => {
         <MenuItem icon="📧" label="Почта" />
         <MenuItem icon="🌐" label="Браузер" />
         <MenuItem icon="📁" label="Документы" />
-        <MenuItem icon="️" label="Изображения" />
+        <MenuItem icon="🖼️" label="Изображения" />
         <MenuItem icon="🎵" label="Музыка" />
       </div>
 
