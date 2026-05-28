@@ -15,6 +15,7 @@ function TwoFactorAuth({ onComplete }) {
   const [smsSent, setSmsSent] = useState(false);
   const [smsVerified, setSmsVerified] = useState(false);
   const [error, setError] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   // Generate TOTP secret
   useEffect(() => {
@@ -224,16 +225,23 @@ function TwoFactorAuth({ onComplete }) {
                 <label className="block text-sm text-gray-400 mb-2">Номер телефона:</label>
                 <input
                   type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^\d+\-\(\)\s]/g, '');
+                    if (val.length <= 18) setPhoneNumber(val);
+                  }}
                   placeholder="+7 (999) 123-45-67"
+                  maxLength={18}
                   className="w-full px-4 py-3 bg-[#0a0a0f] border border-gray-600 rounded-lg text-white font-mono focus:outline-none focus:border-blue-500"
                 />
               </div>
               <motion.button
                 className="w-full py-3 rounded-lg font-medium text-white"
-                style={{ background: 'linear-gradient(to bottom, #3b82f6 0%, #2563eb 100%)' }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                style={{ background: phoneNumber.length >= 6 ? 'linear-gradient(to bottom, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(to bottom, #4b5563 0%, #374151 100%)', opacity: phoneNumber.length >= 6 ? 1 : 0.5 }}
+                whileHover={phoneNumber.length >= 6 ? { scale: 1.02 } : {}}
+                whileTap={phoneNumber.length >= 6 ? { scale: 0.98 } : {}}
                 onClick={handleSmsSend}
+                disabled={phoneNumber.length < 6}
               >
                 Отправить код
               </motion.button>
