@@ -61,6 +61,7 @@ function TwoFactorAuth({ onComplete }) {
   const [smsVerified, setSmsVerified] = useState(false);
   const [error, setError] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [rawDigits, setRawDigits] = useState(''); // Store only user-entered digits
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -78,35 +79,58 @@ function TwoFactorAuth({ onComplete }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showCountryDropdown]);
 
-  const handlePhoneChange = (value) => {
-    // Extract only digits from input
-    const allDigits = value.replace(/\D/g, '');
+  const handlePhoneChange = (e) => {
+    const inputValue = e.target.value;
+    const prevFormatted = phoneNumber;
+    
+    // Determine if user added or removed a digit
+    const prevDigits = rawDigits;
+    const currentDigits = inputValue.replace(/\D/g, '');
     const phoneCodeDigits = selectedCountry.phoneCode.replace(/\D/g, '');
     
-    // Get only user-entered digits (remove country code if present)
-    let userDigits = allDigits;
-    if (userDigits.startsWith(phoneCodeDigits)) {
-      userDigits = userDigits.slice(phoneCodeDigits.length);
+    // Extract user digits from current input (remove country code)
+    let newUserDigits = currentDigits;
+    if (newUserDigits.startsWith(phoneCodeDigits)) {
+      newUserDigits = newUserDigits.slice(phoneCodeDigits.length);
     }
     
-    // Limit to country's digit count
-    if (userDigits.length > selectedCountry.digits) {
-      userDigits = userDigits.slice(0, selectedCountry.digits);
+    // If the new digits match what we expect (user added one digit)
+    if (newUserDigits.length === prevDigits.length + 1 && newUserDigits.startsWith(prevDigits)) {
+      // User added a digit at the end
+      const newDigit = newUserDigits[prevDigits.length];
+      if (newDigit && /\d/.test(newDigit) && newUserDigits.length <= selectedCountry.digits) {
+        setRawDigits(newUserDigits);
+      }
+    } else if (newUserDigits.length < prevDigits.length && prevDigits.startsWith(newUserDigits)) {
+      // User deleted from the end
+      setRawDigits(newUserDigits);
+    } else if (newUserDigits.length === 0) {
+      // User cleared everything
+      setRawDigits('');
+    } else {
+      // Fallback: just use what we extracted
+      if (newUserDigits.length <= selectedCountry.digits) {
+        setRawDigits(newUserDigits);
+      }
     }
-    
-    // Build formatted number: country code + mask with user digits
+  };
+
+  // Format phone number whenever rawDigits or country changes
+  useEffect(() => {
     const mask = selectedCountry.mask;
     let result = '';
     let digitIndex = 0;
     
-    // Skip country code part in mask, start from user input area
+    // Find where user input starts in mask (first '9')
     const codeEndIndex = mask.indexOf('9');
+    
+    // Add country code part
     result = mask.slice(0, codeEndIndex);
     
-    // Apply user digits to mask placeholders
-    for (let i = codeEndIndex; i < mask.length && digitIndex < userDigits.length; i++) {
+    // Apply ONLY user-entered digits to mask
+    for (let i = codeEndIndex; i < mask.length && digitIndex < rawDigits.length; i++) {
       if (mask[i] === '9') {
-        result += userDigits[digitIndex];
+        result += rawDigits[digitIndex];
         digitIndex++;
       } else {
         result += mask[i];
@@ -114,7 +138,7 @@ function TwoFactorAuth({ onComplete }) {
     }
     
     setPhoneNumber(result);
-  };
+  }, [rawDigits, selectedCountry]);
 
   // Generate TOTP secret
   useEffect(() => {
@@ -164,7 +188,7 @@ function TwoFactorAuth({ onComplete }) {
     if (method === 'authenticator') {
       setStep('authenticator');
     } else if (method === 'sms') {
-      setPhoneNumber(selectedCountry.phoneCode + ' ');
+      setRawDigits('');
       setStep('sms');
     } else {
       setStep('key');
@@ -350,7 +374,7 @@ function TwoFactorAuth({ onComplete }) {
                             className="w-full flex items-center gap-3 px-4 py-2 hover:bg-blue-900/30 transition text-left"
                             onClick={() => {
                               setSelectedCountry(country);
-                              setPhoneNumber(country.phoneCode + ' ');
+                              setRawDigits('');
                               setShowCountryDropdown(false);
                             }}
                           >
@@ -368,7 +392,7 @@ function TwoFactorAuth({ onComplete }) {
                 <input
                   type="tel"
                   value={phoneNumber}
-                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  onChange={handlePhoneChange}
                   placeholder={selectedCountry.mask}
                   className="w-full px-4 py-3 bg-[#0a0a0f] border border-gray-600 rounded-lg text-white font-mono focus:outline-none focus:border-blue-500"
                 />
@@ -376,11 +400,11 @@ function TwoFactorAuth({ onComplete }) {
               
               <motion.button
                 className="w-full py-3 rounded-lg font-medium text-white"
-                style={{ background: phoneNumber.length >= selectedCountry.length - 2 ? 'linear-gradient(to bottom, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(to bottom, #4b5563 0%, #374151 100%)', opacity: phoneNumber.length >= selectedCountry.length - 2 ? 1 : 0.5 }}
-                whileHover={phoneNumber.length >= selectedCountry.length - 2 ? { scale: 1.02 } : {}}
-                whileTap={phoneNumber.length >= selectedCountry.length - 2 ? { scale: 0.98 } : {}}
+                style={{ background: rawDigits.length === selectedCountry.digits ? 'linear-gradient(to bottom, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(to bottom, #4b5563 0%, #374151 100%)', opacity: rawDigits.length === selectedCountry.digits ? 1 : 0.5 }}
+                whileHover={rawDigits.length === selectedCountry.digits ? { scale: 1.02 } : {}}
+                whileTap={rawDigits.length === selectedCountry.digits ? { scale: 0.98 } : {}}
                 onClick={handleSmsSend}
-                disabled={phoneNumber.length < selectedCountry.length - 2}
+                disabled={rawDigits.length !== selectedCountry.digits}
               >
                 Отправить код
               </motion.button>
