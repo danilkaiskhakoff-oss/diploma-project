@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import OTPAuth from 'otpauth';
+import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode.react';
 
 function TwoFactorAuth({ onComplete }) {
