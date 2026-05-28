@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import * as OTPAuth from 'otpauth';
-import QRCode from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 function TwoFactorAuth({ onComplete }) {
   const [step, setStep] = useState('method');
@@ -156,7 +156,7 @@ function TwoFactorAuth({ onComplete }) {
           {/* QR Code */}
           <div className="flex flex-col items-center mb-6">
             <div className="bg-white p-4 rounded-lg mb-4">
-              <QRCode value={totpUri} size={180} level="L" />
+              <QRCodeCanvas value={totpUri} size={180} level="L" />
             </div>
             <p className="text-gray-400 text-sm text-center mb-2">
               Отсканируйте QR-код приложением Google Authenticator
