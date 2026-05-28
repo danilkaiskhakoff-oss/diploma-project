@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Desktop from './simulations/Desktop';
 import PasswordSimulation from './simulations/PasswordSimulation';
+import DataProtectionSimulation from './simulations/DataProtectionSimulation';
 
 function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -31,6 +32,18 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
       return (
         <div className="absolute inset-0 z-20">
           <PasswordSimulation
+            simulation={checkpoint.simulation}
+            onComplete={() => {
+              onClose();
+            }}
+          />
+        </div>
+      );
+    }
+    if (checkpoint.simulation.type === 'data-protection') {
+      return (
+        <div className="absolute inset-0 z-20">
+          <DataProtectionSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
               onClose();
