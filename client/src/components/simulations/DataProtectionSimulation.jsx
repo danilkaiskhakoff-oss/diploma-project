@@ -140,6 +140,7 @@ function DataProtectionSimulation({ simulation, onComplete }) {
           {currentStep === 'leak' && (
             <DataLeakScenario
               twoFactorEnabled={twoFactorEnabled}
+              twoFactorMethod={twoFactorMethod}
               backupStrategy={backupStrategy}
               filesEncrypted={filesEncrypted}
               onComplete={handleLeakComplete}

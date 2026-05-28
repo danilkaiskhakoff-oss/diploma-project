@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-function DataLeakScenario({ twoFactorEnabled, backupStrategy, filesEncrypted, onComplete }) {
+function DataLeakScenario({ twoFactorEnabled, twoFactorMethod, backupStrategy, filesEncrypted, onComplete }) {
   const [step, setStep] = useState('news');
   const [showResults, setShowResults] = useState(false);
 
