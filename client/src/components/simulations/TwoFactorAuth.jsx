@@ -79,31 +79,34 @@ function TwoFactorAuth({ onComplete }) {
   }, [showCountryDropdown]);
 
   const handlePhoneChange = (value) => {
-    const digits = value.replace(/\D/g, '');
+    // Extract only digits from input
+    const allDigits = value.replace(/\D/g, '');
     const phoneCodeDigits = selectedCountry.phoneCode.replace(/\D/g, '');
     
-    // Allow only digits after country code
-    let rawDigits = digits;
-    if (rawDigits.startsWith(phoneCodeDigits)) {
-      rawDigits = rawDigits.slice(phoneCodeDigits.length);
+    // Get only user-entered digits (remove country code if present)
+    let userDigits = allDigits;
+    if (userDigits.startsWith(phoneCodeDigits)) {
+      userDigits = userDigits.slice(phoneCodeDigits.length);
     }
     
     // Limit to country's digit count
-    if (rawDigits.length > selectedCountry.digits) {
-      rawDigits = rawDigits.slice(0, selectedCountry.digits);
+    if (userDigits.length > selectedCountry.digits) {
+      userDigits = userDigits.slice(0, selectedCountry.digits);
     }
     
-    // Reconstruct with country code
-    const fullNumber = phoneCodeDigits + rawDigits;
-    
-    // Apply mask
+    // Build formatted number: country code + mask with user digits
     const mask = selectedCountry.mask;
     let result = '';
     let digitIndex = 0;
     
-    for (let i = 0; i < mask.length && digitIndex < fullNumber.length; i++) {
+    // Skip country code part in mask, start from user input area
+    const codeEndIndex = mask.indexOf('9');
+    result = mask.slice(0, codeEndIndex);
+    
+    // Apply user digits to mask placeholders
+    for (let i = codeEndIndex; i < mask.length && digitIndex < userDigits.length; i++) {
       if (mask[i] === '9') {
-        result += fullNumber[digitIndex];
+        result += userDigits[digitIndex];
         digitIndex++;
       } else {
         result += mask[i];
