@@ -8,7 +8,10 @@ export const levels = {
       {
         id: 'cyber-basics',
         title: 'Основы кибербезопасности',
-        type: 'theory',
+        type: 'simulation',
+        simulation: {
+          type: 'cyber-basics'
+        },
         theory: {
           title: 'Что такое кибербезопасность?',
           content: `Кибербезопасность — это практика защиты систем, сетей и данных от цифровых атак.
@@ -37,6 +40,18 @@ export const levels = {
             options: ['100', '1000', 'Более 2000', '10000'],
             correctIndex: 2,
             explanation: 'По статистике, ежедневно происходит более 2000 кибератак по всему миру.'
+          },
+          {
+            question: 'Что такое CIA Triad?',
+            options: ['Группа хакеров', 'Конфиденциальность, Целостность, Доступность', 'Тип вируса', 'Метод шифрования'],
+            correctIndex: 1,
+            explanation: 'CIA Triad — три основных принципа кибербезопасности: Confidentiality, Integrity, Availability.'
+          },
+          {
+            question: 'Какой первый этап хакерской атаки?',
+            options: ['Установка вредоноса', 'Кража данных', 'Разведка', 'Шифрование'],
+            correctIndex: 2,
+            explanation: 'Разведка (Reconnaissance) — первый этап, когда хакер собирает информацию о цели.'
           }
         ]
       },
