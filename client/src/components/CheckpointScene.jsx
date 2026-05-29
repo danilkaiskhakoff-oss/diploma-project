@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import Desktop from './simulations/Desktop';
 import PasswordSimulation from './simulations/PasswordSimulation';
 import DataProtectionSimulation from './simulations/DataProtectionSimulation';
+import SocialMediaSimulation from './simulations/SocialMediaSimulation';
 
 function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -44,6 +45,18 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
       return (
         <div className="absolute inset-0 z-20">
           <DataProtectionSimulation
+            simulation={checkpoint.simulation}
+            onComplete={() => {
+              onClose();
+            }}
+          />
+        </div>
+      );
+    }
+    if (checkpoint.simulation.type === 'social-media') {
+      return (
+        <div className="absolute inset-0 z-20">
+          <SocialMediaSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
               onClose();
