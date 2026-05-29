@@ -446,7 +446,10 @@ export const levels = {
       {
         id: 'network-attacks',
         title: 'Сетевые атаки',
-        type: 'theory',
+        type: 'simulation',
+        simulation: {
+          type: 'network-attacks'
+        },
         theory: {
           title: 'Виды сетевых атак',
           content: `Сетевые атаки направлены на уязвимости в компьютерных сетях.
@@ -479,6 +482,18 @@ export const levels = {
             options: ['Не использовать интернет', 'Использовать VPN', 'Отключить Wi-Fi', 'Ничего'],
             correctIndex: 1,
             explanation: 'VPN шифрует весь трафик, делая его нечитаемым для атакующих в публичных сетях.'
+          },
+          {
+            question: 'Что такое Evil Twin атака?',
+            options: ['Вирус', 'Фальшивая точка доступа Wi-Fi', 'Взлом пароля', 'DDoS'],
+            correctIndex: 1,
+            explanation: 'Evil Twin — это фальшивая Wi-Fi точка, которая маскируется под легитимную для перехвата данных.'
+          },
+          {
+            question: 'Какой протокол защищает данные при передаче?',
+            options: ['HTTP', 'HTTPS', 'FTP', 'SMTP'],
+            correctIndex: 1,
+            explanation: 'HTTPS шифрует данные между браузером и сервером, защищая от перехвата.'
           }
         ]
       },
