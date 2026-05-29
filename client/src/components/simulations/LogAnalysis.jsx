@@ -82,6 +82,7 @@ function LogAnalysis({ onComplete }) {
   };
 
   const handleNext = () => {
+    console.log('handleNext called', flagged);
     const correctFlags = logEntries
       .filter(e => e.isSuspicious && flagged[e.id])
       .length;
@@ -89,6 +90,7 @@ function LogAnalysis({ onComplete }) {
       .filter(e => !e.isSuspicious && flagged[e.id])
       .length;
     const score = correctFlags - incorrectFlags;
+    console.log('score:', score, 'max:', suspiciousCount);
     onComplete({ score: Math.max(0, score), max: suspiciousCount });
   };
 
