@@ -58,6 +58,7 @@ function NetworkAttacksSimulation({ simulation, onComplete }) {
     if (currentIndex < stages.length - 1) {
       setCurrentStage(stages[currentIndex + 1]);
     } else {
+      setCurrentStage('quiz');
       setShowQuiz(true);
     }
   };
@@ -323,7 +324,7 @@ function NetworkAttacksSimulation({ simulation, onComplete }) {
                     </motion.div>
                   )}
 
-                  {showQuiz && (
+                  {currentStage === 'quiz' && (
                     <motion.div
                       key="quiz"
                       initial={{ opacity: 0, x: 20 }}
