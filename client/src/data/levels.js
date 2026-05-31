@@ -993,7 +993,10 @@ export const levels = {
       {
         id: 'incident-response',
         title: 'Incident Response',
-        type: 'scenario',
+        type: 'simulation',
+        simulation: {
+          type: 'incident-response'
+        },
         theory: {
           title: 'Реагирование на инциденты',
           content: `Incident Response — процесс реагирования на киберинциденты.

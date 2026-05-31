@@ -12,6 +12,7 @@ import WifiSecuritySimulation from './simulations/WifiSecuritySimulation';
 import InsiderThreatsSimulation from './simulations/InsiderThreatsSimulation';
 import DDoSSimulation from './simulations/DDoSSimulation';
 import PentestSimulation from './simulations/PentestSimulation';
+import IRSimulation from './simulations/IRSimulation';
 
 function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -161,6 +162,18 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
       return (
         <div className="absolute inset-0 z-20">
           <PentestSimulation
+            simulation={checkpoint.simulation}
+            onComplete={() => {
+              onClose();
+            }}
+          />
+        </div>
+      );
+    }
+    if (checkpoint.simulation.type === 'incident-response') {
+      return (
+        <div className="absolute inset-0 z-20">
+          <IRSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
               onClose();
