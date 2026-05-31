@@ -721,7 +721,10 @@ export const levels = {
       {
         id: 'ddos',
         title: 'DDoS-атаки',
-        type: 'theory',
+        type: 'simulation',
+        simulation: {
+          type: 'ddos'
+        },
         theory: {
           title: 'Распределённые атаки на отказ в обслуживании',
           content: `DDoS (Distributed Denial of Service) — атака, при которой множество компьютеров одновременно отправляют запросы на сервер, перегружая его.

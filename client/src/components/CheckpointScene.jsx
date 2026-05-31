@@ -10,6 +10,7 @@ import SocialEngineeringSimulation from './simulations/SocialEngineeringSimulati
 import MalwareSimulation from './simulations/MalwareSimulation';
 import WifiSecuritySimulation from './simulations/WifiSecuritySimulation';
 import InsiderThreatsSimulation from './simulations/InsiderThreatsSimulation';
+import DDoSSimulation from './simulations/DDoSSimulation';
 
 function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -135,6 +136,18 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
       return (
         <div className="absolute inset-0 z-20">
           <InsiderThreatsSimulation
+            simulation={checkpoint.simulation}
+            onComplete={() => {
+              onClose();
+            }}
+          />
+        </div>
+      );
+    }
+    if (checkpoint.simulation.type === 'ddos') {
+      return (
+        <div className="absolute inset-0 z-20">
+          <DDoSSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
               onClose();
