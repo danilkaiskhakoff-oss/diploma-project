@@ -6,6 +6,7 @@ import DataProtectionSimulation from './simulations/DataProtectionSimulation';
 import SocialMediaSimulation from './simulations/SocialMediaSimulation';
 import CyberBasicsSimulation from './simulations/CyberBasicsSimulation';
 import NetworkAttacksSimulation from './simulations/NetworkAttacksSimulation';
+import SocialEngineeringSimulation from './simulations/SocialEngineeringSimulation';
 
 function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -83,6 +84,18 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
       return (
         <div className="absolute inset-0 z-20">
           <NetworkAttacksSimulation
+            simulation={checkpoint.simulation}
+            onComplete={() => {
+              onClose();
+            }}
+          />
+        </div>
+      );
+    }
+    if (checkpoint.simulation.type === 'social-engineering') {
+      return (
+        <div className="absolute inset-0 z-20">
+          <SocialEngineeringSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
               onClose();
