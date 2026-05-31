@@ -767,7 +767,10 @@ export const levels = {
       {
         id: 'pentest',
         title: 'Пентест',
-        type: 'scenario',
+        type: 'simulation',
+        simulation: {
+          type: 'pentest'
+        },
         theory: {
           title: 'Тестирование на проникновение',
           content: `Пентест (Penetration Testing) — имитация хакерской атаки для обнаружения уязвимостей.
