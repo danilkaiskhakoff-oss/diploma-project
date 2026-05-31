@@ -649,7 +649,10 @@ export const levels = {
       {
         id: 'wifi-security',
         title: 'Безопасность Wi-Fi',
-        type: 'scenario',
+        type: 'simulation',
+        simulation: {
+          type: 'wifi-security'
+        },
         theory: {
           title: 'Защита в беспроводных сетях',
           content: `Публичные Wi-Fi сети — лакомая цель для атакующих.
@@ -687,6 +690,18 @@ export const levels = {
             options: ['Читать новости', 'Заходить в банковское приложение', 'Слушать музыку', 'Писать документы'],
             correctIndex: 1,
             explanation: 'Банковские операции через публичный Wi-Fi крайне рискованны — трафик может быть перехвачен.'
+          },
+          {
+            question: 'Какой протокол шифрования самый надёжный для Wi-Fi?',
+            options: ['WEP', 'WPA', 'WPA2', 'WPA3'],
+            correctIndex: 3,
+            explanation: 'WPA3 — самый современный и защищённый протокол шифрования для Wi-Fi сетей.'
+          },
+          {
+            question: 'Зачем отключать WPS на роутере?',
+            options: ['Для скорости', 'WPS имеет уязвимости', 'Для красоты', 'Не нужно'],
+            correctIndex: 1,
+            explanation: 'WPS (Wi-Fi Protected Setup) имеет известные уязвимости, позволяющие подобрать PIN-код.'
           }
         ]
       },

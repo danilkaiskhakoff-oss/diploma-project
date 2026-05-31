@@ -8,6 +8,7 @@ import CyberBasicsSimulation from './simulations/CyberBasicsSimulation';
 import NetworkAttacksSimulation from './simulations/NetworkAttacksSimulation';
 import SocialEngineeringSimulation from './simulations/SocialEngineeringSimulation';
 import MalwareSimulation from './simulations/MalwareSimulation';
+import WifiSecuritySimulation from './simulations/WifiSecuritySimulation';
 
 function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -109,6 +110,18 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
       return (
         <div className="absolute inset-0 z-20">
           <MalwareSimulation
+            simulation={checkpoint.simulation}
+            onComplete={() => {
+              onClose();
+            }}
+          />
+        </div>
+      );
+    }
+    if (checkpoint.simulation.type === 'wifi-security') {
+      return (
+        <div className="absolute inset-0 z-20">
+          <WifiSecuritySimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
               onClose();
