@@ -749,7 +749,10 @@ SMS можно перехватить через SIM-swapping атаку.`,
       {
         id: 'insider-threats',
         title: 'Инсайдерские угрозы',
-        type: 'scenario',
+        type: 'simulation',
+        simulation: {
+          type: 'insider-threats'
+        },
         theory: {
           title: 'Угрозы изнутри организации',
           content: `Инсайдерские угрозы исходят от людей внутри организации.
