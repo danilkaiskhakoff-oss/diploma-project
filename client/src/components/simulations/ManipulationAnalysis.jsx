@@ -77,15 +77,15 @@ function ManipulationAnalysis({ onComplete }) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-900">
+    <div className="h-full flex flex-col bg-gray-900 relative">
       {/* Header */}
-      <div className="px-4 py-3 bg-gray-800">
+      <div className="px-4 py-3 bg-gray-800 flex-shrink-0">
         <h3 className="text-white font-medium mb-1">Анализ манипуляций</h3>
         <p className="text-gray-400 text-xs">Отметьте техники социальной инженерии, которые использовал мошенник</p>
       </div>
 
       {/* Progress */}
-      <div className="px-4 py-2 bg-gray-800/50">
+      <div className="px-4 py-2 bg-gray-800/50 flex-shrink-0">
         <div className="flex justify-between text-xs text-gray-400 mb-1">
           <span>Найдено манипуляций</span>
           <span>{foundCount}/{correctCount}</span>
@@ -101,7 +101,7 @@ function ManipulationAnalysis({ onComplete }) {
       </div>
 
       {/* Manipulations List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
         {manipulations.map((manipulation, index) => (
           <motion.button
             key={manipulation.id}
@@ -148,12 +148,12 @@ function ManipulationAnalysis({ onComplete }) {
         ))}
       </div>
 
-      {/* Next Button */}
+      {/* Next Button - Fixed at bottom */}
       {foundCount > 0 && (
-        <div className="px-4 py-3 bg-gray-800">
+        <div className="px-4 py-3 bg-gray-800 flex-shrink-0 z-50 border-t border-gray-700">
           <button
             onClick={handleNext}
-            className="w-full py-3 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition"
+            className="w-full py-3 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition shadow-lg"
           >
             Продолжить →
           </button>
