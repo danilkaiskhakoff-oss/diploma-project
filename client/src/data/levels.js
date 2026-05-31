@@ -1080,7 +1080,10 @@ Internet → WAF → Файрвол → Серверы → БД
       {
         id: 'osint',
         title: 'OSINT',
-        type: 'scenario',
+        type: 'simulation',
+        simulation: {
+          type: 'osint'
+        },
         theory: {
           title: 'Разведка по открытым источникам',
           content: `OSINT (Open Source Intelligence) — сбор информации из общедоступных источников.

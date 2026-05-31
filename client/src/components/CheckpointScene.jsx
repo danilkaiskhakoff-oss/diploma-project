@@ -13,6 +13,7 @@ import InsiderThreatsSimulation from './simulations/InsiderThreatsSimulation';
 import DDoSSimulation from './simulations/DDoSSimulation';
 import PentestSimulation from './simulations/PentestSimulation';
 import IRSimulation from './simulations/IRSimulation';
+import OSINTSimulation from './simulations/OSINTSimulation';
 
 function CheckpointScene({ checkpoint, levelColor, onClose }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -174,6 +175,18 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
       return (
         <div className="absolute inset-0 z-20">
           <IRSimulation
+            simulation={checkpoint.simulation}
+            onComplete={() => {
+              onClose();
+            }}
+          />
+        </div>
+      );
+    }
+    if (checkpoint.simulation.type === 'osint') {
+      return (
+        <div className="absolute inset-0 z-20">
+          <OSINTSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
               onClose();
