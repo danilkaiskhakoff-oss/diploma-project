@@ -42,7 +42,7 @@ function EmailView({ email, hintsEnabled, onChoice, analyzedEmails }) {
 
         <div className="flex items-center gap-3 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-gray-500">От:</span>
+            <span className="text-gray-600">От:</span>
             <span
               className={`font-medium ${highlightSender ? 'bg-yellow-200 px-1 rounded cursor-help' : ''}`}
               onMouseEnter={() => highlightSender && setHoveredElement('sender')}
@@ -51,7 +51,7 @@ function EmailView({ email, hintsEnabled, onChoice, analyzedEmails }) {
               {email.fromName} &lt;{email.from}&gt;
             </span>
           </div>
-          <span className="text-gray-400 text-xs">{email.date}</span>
+          <span className="text-gray-600 text-xs">{email.date}</span>
         </div>
 
         {/* Hint tooltip for sender */}
@@ -78,7 +78,7 @@ function EmailView({ email, hintsEnabled, onChoice, analyzedEmails }) {
           </div>
           <div>
             <div className="font-semibold text-gray-800">{email.fromName}</div>
-            <div className="text-xs text-gray-400">{email.from}</div>
+            <div className="text-xs text-gray-600">{email.from}</div>
           </div>
         </div>
 
