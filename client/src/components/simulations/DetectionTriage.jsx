@@ -120,7 +120,13 @@ function DetectionTriage({ onComplete }) {
     });
   };
 
+  const classifiedCount = Object.keys(classifications).length;
+  const truePositiveCount = Object.values(classifications).filter(c => c.isTruePositive).length;
+  const falsePositiveCount = Object.values(classifications).filter(c => !c.isTruePositive).length;
+
   const handleNext = () => {
+    if (classifiedCount < alerts.length) return;
+
     let correctCount = 0;
     let totalScore = 0;
 
@@ -139,12 +145,8 @@ function DetectionTriage({ onComplete }) {
     });
 
     const score = Math.min(totalScore, 30);
-    onComplete({ score, max: 30, alerts: classifications });
+    onComplete({ score, max: 30, alerts });
   };
-
-  const classifiedCount = Object.keys(classifications).length;
-  const truePositiveCount = Object.values(classifications).filter(c => c.isTruePositive).length;
-  const falsePositiveCount = Object.values(classifications).filter(c => !c.isTruePositive).length;
 
   return (
     <div className="h-full flex flex-col bg-gray-950">
@@ -330,10 +332,9 @@ function DetectionTriage({ onComplete }) {
           </div>
           <button
             onClick={handleNext}
-            disabled={classifiedCount < alerts.length}
             className={`w-full py-3 font-medium rounded-lg transition font-mono ${
               classifiedCount === alerts.length
-                ? 'bg-red-600 text-white hover:bg-red-700'
+                ? 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
                 : 'bg-gray-800 text-gray-500 cursor-not-allowed'
             }`}
           >
