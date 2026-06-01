@@ -8,7 +8,7 @@ const defenseOptions = [
     description: 'Распределение трафика через CDN',
     cost: 3000,
     effectiveness: { 'udp-flood': 60, 'syn-flood': 70, 'http-flood': 90 },
-    icon: ''
+    icon: '🛡️'
   },
   {
     id: 'rate-limiting',
@@ -16,7 +16,7 @@ const defenseOptions = [
     description: 'Ограничение запросов на IP',
     cost: 1000,
     effectiveness: { 'udp-flood': 30, 'syn-flood': 50, 'http-flood': 80 },
-    icon: ''
+    icon: '⏱️'
   },
   {
     id: 'syn-cookies',
@@ -24,7 +24,7 @@ const defenseOptions = [
     description: 'Защита от SYN Flood',
     cost: 500,
     effectiveness: { 'udp-flood': 0, 'syn-flood': 95, 'http-flood': 0 },
-    icon: ''
+    icon: '🍪'
   },
   {
     id: 'blackhole',
@@ -32,7 +32,7 @@ const defenseOptions = [
     description: 'Дроп всего подозрительного трафика',
     cost: 0,
     effectiveness: { 'udp-flood': 100, 'syn-flood': 100, 'http-flood': 100 },
-    icon: '',
+    icon: '🕳️',
     warning: 'Блокирует ВЕСЬ трафик, включая легитимный!'
   },
   {
@@ -41,7 +41,7 @@ const defenseOptions = [
     description: 'Блокировка стран-источников',
     cost: 1500,
     effectiveness: { 'udp-flood': 50, 'syn-flood': 50, 'http-flood': 40 },
-    icon: ''
+    icon: '🌍'
   },
   {
     id: 'anycast',
@@ -49,7 +49,7 @@ const defenseOptions = [
     description: 'Распределение через несколько ЦОД',
     cost: 5000,
     effectiveness: { 'udp-flood': 80, 'syn-flood': 75, 'http-flood': 85 },
-    icon: ''
+    icon: '🌐'
   }
 ];
 
@@ -131,7 +131,7 @@ function DefenseConfig({ attackType, onComplete }) {
         <div className="bg-red-900/20 border border-red-800 rounded-xl p-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-              <span className="text-red-400 text-xl"></span>
+              <span className="text-red-400 text-xl">⚠️</span>
             </div>
             <div>
               <h3 className="font-bold text-red-400">Активная атака: {

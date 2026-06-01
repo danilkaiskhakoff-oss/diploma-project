@@ -6,7 +6,7 @@ const attackTypes = [
     id: 'udp-flood',
     name: 'UDP Flood',
     description: 'Перегрузка канала UDP-пакетами',
-    icon: '',
+    icon: '📡',
     packets: [
       { protocol: 'UDP', src: '185.234.72.x', dst: '10.0.0.1', port: 53, size: '1400 bytes', flags: '-' },
       { protocol: 'UDP', src: '91.234.56.x', dst: '10.0.0.1', port: 80, size: '1400 bytes', flags: '-' },
@@ -21,7 +21,7 @@ const attackTypes = [
     id: 'syn-flood',
     name: 'SYN Flood',
     description: 'Перегрузка таблицы соединений',
-    icon: '',
+    icon: '🔄',
     packets: [
       { protocol: 'TCP', src: '185.234.72.x', dst: '10.0.0.1', port: 80, size: '60 bytes', flags: 'SYN' },
       { protocol: 'TCP', src: '91.234.56.x', dst: '10.0.0.1', port: 80, size: '60 bytes', flags: 'SYN' },
@@ -36,7 +36,7 @@ const attackTypes = [
     id: 'http-flood',
     name: 'HTTP Flood',
     description: 'Перегрузка на уровне приложений',
-    icon: '',
+    icon: '🌐',
     packets: [
       { protocol: 'HTTP', src: '185.234.72.x', dst: '10.0.0.1', port: 80, size: '500 bytes', flags: 'GET /api/search' },
       { protocol: 'HTTP', src: '91.234.56.x', dst: '10.0.0.1', port: 80, size: '500 bytes', flags: 'GET /api/search' },
