@@ -9,7 +9,7 @@ const containmentOptions = [
     effectiveness: 90,
     businessImpact: 40,
     cost: 'Средний',
-    icon: '',
+    icon: '🔒',
     details: 'Полная изоляция предотвратит распространение, но остановит работу отдела.'
   },
   {
@@ -19,7 +19,7 @@ const containmentOptions = [
     effectiveness: 60,
     businessImpact: 5,
     cost: 'Низкий',
-    icon: '',
+    icon: '🚫',
     details: 'Быстро и безопасно, но атакующий может использовать другие IP.'
   },
   {
@@ -29,7 +29,7 @@ const containmentOptions = [
     effectiveness: 75,
     businessImpact: 60,
     cost: 'Высокий',
-    icon: '',
+    icon: '🔑',
     details: 'Остановит lateral movement, но все сотрудники потеряют доступ на 30 мин.'
   },
   {
@@ -39,7 +39,7 @@ const containmentOptions = [
     effectiveness: 95,
     businessImpact: 90,
     cost: 'Критический',
-    icon: '',
+    icon: '📡',
     details: 'Радикальная мера. Полностью остановит exfiltration, но парализует бизнес.'
   },
   {
@@ -49,7 +49,7 @@ const containmentOptions = [
     effectiveness: 50,
     businessImpact: 10,
     cost: 'Низкий',
-    icon: '',
+    icon: '👁️',
     details: 'Даст больше данных для анализа, но не остановит атаку.'
   },
   {
@@ -59,7 +59,7 @@ const containmentOptions = [
     effectiveness: 70,
     businessImpact: 30,
     cost: 'Средний',
-    icon: '',
+    icon: '💾',
     details: 'Обеспечит continuity, но требует 2 часа на переключение.'
   }
 ];

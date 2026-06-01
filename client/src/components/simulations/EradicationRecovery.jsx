@@ -6,7 +6,7 @@ const steps = [
     id: 'scan-malware',
     name: 'Сканирование на malware',
     description: 'Запустить полное сканирование заражённых систем',
-    icon: '',
+    icon: '🔍',
     details: 'EDR сканирование всех файлов и процессов на FS-01 и WS-042.',
     order: 1
   },
@@ -14,7 +14,7 @@ const steps = [
     id: 'remove-malware',
     name: 'Удаление malware',
     description: 'Удалить cryptor.exe и связанные файлы',
-    icon: '',
+    icon: '🗑️',
     details: 'Изолировать и удалить все вредоносные файлы. Очистить registry keys.',
     order: 2
   },
@@ -22,7 +22,7 @@ const steps = [
     id: 'patch-vulns',
     name: 'Патч уязвимостей',
     description: 'Закрыть уязвимость, через которую проникли',
-    icon: '',
+    icon: '🩹',
     details: 'Обновить ОС, приложения, закрыть открытые порты.',
     order: 3
   },
@@ -30,7 +30,7 @@ const steps = [
     id: 'restore-backup',
     name: 'Восстановление из бэкапа',
     description: 'Восстановить зашифрованные файлы из бэкапа',
-    icon: '',
+    icon: '💾',
     details: 'Восстановить данные FS-01 из бэкапа за 14:00 (до атаки).',
     order: 4
   },
@@ -38,7 +38,7 @@ const steps = [
     id: 'verify-clean',
     name: 'Верификация чистоты',
     description: 'Подтвердить, что системы чисты',
-    icon: '',
+    icon: '✅',
     details: 'Повторное сканирование, проверка логов, мониторинг 24 часа.',
     order: 5
   },
@@ -46,7 +46,7 @@ const steps = [
     id: 'return-production',
     name: 'Возврат в production',
     description: 'Вернуть системы в рабочее состояние',
-    icon: '',
+    icon: '🚀',
     details: 'Подключить системы к сети, уведомить пользователей, мониторинг.',
     order: 6
   }
