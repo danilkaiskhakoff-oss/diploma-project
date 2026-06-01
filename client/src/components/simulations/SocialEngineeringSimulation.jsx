@@ -252,7 +252,7 @@ function SocialEngineeringSimulation({ simulation, onComplete }) {
                   className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-white/10 transition"
                 >
                   <div className="w-16 h-16 rounded-xl bg-green-600 flex items-center justify-center shadow-lg">
-                    <span className="text-white text-3xl"></span>
+                    <span className="text-white text-3xl">📞</span>
                   </div>
                   <span className="text-white text-sm font-medium drop-shadow-lg">Телефон</span>
                 </motion.button>
@@ -285,7 +285,7 @@ function SocialEngineeringSimulation({ simulation, onComplete }) {
                     {/* Phone Frame */}
                     <div className="w-80 h-[600px] bg-black rounded-[3rem] p-3 shadow-2xl border-4 border-gray-800">
                       {/* Phone Screen */}
-                      <div className="w-full h-full bg-gray-900 rounded-[2.5rem] overflow-hidden relative">
+                      <div className="w-full h-full bg-gray-900 rounded-[2.5rem] overflow-hidden relative flex flex-col">
                         {/* Notch */}
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-20" />
                         
@@ -299,7 +299,7 @@ function SocialEngineeringSimulation({ simulation, onComplete }) {
                         </div>
 
                         {/* Content */}
-                        <div className="relative z-10 h-full pt-2">
+                        <div className="relative z-10 flex-1 overflow-hidden">
                           <AnimatePresence mode="wait">
                             {currentStage === 'call' && (
                               <motion.div
