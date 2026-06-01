@@ -76,6 +76,7 @@ function DetectionTriage({ onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [classifications, setClassifications] = useState({});
   const [selectedAlert, setSelectedAlert] = useState(null);
+  const [pendingSelections, setPendingSelections] = useState({});
   const [triageComplete, setTriageComplete] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
 
@@ -94,12 +95,29 @@ function DetectionTriage({ onComplete }) {
     return () => clearTimeout(timer);
   }, [currentIndex]);
 
-  const handleClassify = (alertId, isTP, priority) => {
-    setClassifications(prev => ({
+  const handleSelectType = (alertId, isTP) => {
+    setPendingSelections(prev => ({
       ...prev,
-      [alertId]: { isTruePositive: isTP, priority }
+      [alertId]: { ...prev[alertId], isTruePositive: isTP }
     }));
-    setSelectedAlert(null);
+  };
+
+  const handleSelectPriority = (alertId, priority) => {
+    setPendingSelections(prev => {
+      const current = prev[alertId] || {};
+      const updated = { ...current, priority };
+
+      if (current.isTruePositive !== undefined) {
+        setClassifications(prevClass => ({
+          ...prevClass,
+          [alertId]: { isTruePositive: current.isTruePositive, priority }
+        }));
+        setSelectedAlert(null);
+        return { ...prev, [alertId]: undefined };
+      }
+
+      return { ...prev, [alertId]: updated };
+    });
   };
 
   const handleNext = () => {
@@ -211,16 +229,24 @@ function DetectionTriage({ onComplete }) {
                           <p className="text-sm text-gray-400 mb-2 font-mono">Тип:</p>
                           <div className="flex gap-2">
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleClassify(alert.id, true, alert.correctPriority); }}
-                              className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-mono text-sm"
+                              onClick={(e) => { e.stopPropagation(); handleSelectType(alert.id, true); }}
+                              className={`flex-1 py-2 rounded-lg transition font-mono text-sm ${
+                                pendingSelections[alert.id]?.isTruePositive === true
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-green-600 text-white hover:bg-green-700'
+                              }`}
                             >
-                              True Positive
+                              {pendingSelections[alert.id]?.isTruePositive === true ? '✓ TP' : 'True Positive'}
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); handleClassify(alert.id, false, 'low'); }}
-                              className="flex-1 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition font-mono text-sm"
+                              onClick={(e) => { e.stopPropagation(); handleSelectType(alert.id, false); }}
+                              className={`flex-1 py-2 rounded-lg transition font-mono text-sm ${
+                                pendingSelections[alert.id]?.isTruePositive === false
+                                  ? 'bg-gray-500 text-white'
+                                  : 'bg-gray-700 text-white hover:bg-gray-600'
+                              }`}
                             >
-                              False Positive
+                              {pendingSelections[alert.id]?.isTruePositive === false ? '✓ FP' : 'False Positive'}
                             </button>
                           </div>
                         </div>
@@ -232,16 +258,31 @@ function DetectionTriage({ onComplete }) {
                             {['critical', 'high', 'medium', 'low'].map(priority => (
                               <button
                                 key={priority}
-                                onClick={(e) => { e.stopPropagation(); handleClassify(alert.id, true, priority); }}
-                                className={`flex-1 py-2 rounded-lg font-mono text-xs ${
-                                  severityColors[priority].badge
-                                } text-white hover:opacity-80 transition`}
+                                onClick={(e) => { e.stopPropagation(); handleSelectPriority(alert.id, priority); }}
+                                className={`flex-1 py-2 rounded-lg font-mono text-xs transition ${
+                                  pendingSelections[alert.id]?.priority === priority
+                                    ? `${severityColors[priority].badge} ring-2 ring-white`
+                                    : `${severityColors[priority].badge} hover:opacity-80`
+                                } text-white`}
                               >
-                                {priority.toUpperCase()}
+                                {pendingSelections[alert.id]?.priority === priority ? '✓' : priority.toUpperCase().charAt(0)}
                               </button>
                             ))}
                           </div>
                         </div>
+                      </div>
+
+                      {/* Status hint */}
+                      <div className="mt-3 text-xs text-gray-500 font-mono">
+                        {pendingSelections[alert.id]?.isTruePositive !== undefined && pendingSelections[alert.id]?.priority === undefined && (
+                          <span className="text-yellow-400">⚡ Тип выбран. Теперь выберите приоритет...</span>
+                        )}
+                        {pendingSelections[alert.id]?.isTruePositive === undefined && pendingSelections[alert.id]?.priority !== undefined && (
+                          <span className="text-yellow-400">⚡ Приоритет выбран. Теперь выберите тип...</span>
+                        )}
+                        {pendingSelections[alert.id]?.isTruePositive === undefined && pendingSelections[alert.id]?.priority === undefined && (
+                          <span>Выберите тип и приоритет</span>
+                        )}
                       </div>
                     </motion.div>
                   )}
