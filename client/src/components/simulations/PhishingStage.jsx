@@ -65,9 +65,9 @@ function PhishingStage({ onComplete }) {
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-sm text-gray-600">От: <span className="font-medium text-gray-800">{phishingEmail.fromName}</span></p>
-              <p className="text-xs text-gray-500">{phishingEmail.from}</p>
+              <p className="text-xs text-gray-700">{phishingEmail.from}</p>
             </div>
-            <p className="text-xs text-gray-500">{phishingEmail.date}</p>
+            <p className="text-xs text-gray-700">{phishingEmail.date}</p>
           </div>
           <h3 className="font-medium text-gray-800">{phishingEmail.subject}</h3>
         </div>
