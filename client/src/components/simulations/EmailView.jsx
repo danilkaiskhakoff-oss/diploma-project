@@ -204,7 +204,7 @@ function EmailView({ email, hintsEnabled, onChoice, analyzedEmails }) {
 
         {/* Footer */}
         <div className="text-xs text-gray-400 border-t border-gray-100 pt-4">
-          {email.body.footer.split('\n').map((line, i) => (
+          {(email.body.footer || '').split('\n').map((line, i) => (
             <div key={i}>{line}</div>
           ))}
         </div>

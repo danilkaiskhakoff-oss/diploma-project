@@ -47,7 +47,7 @@ function EmailList({ emails, selectedEmail, analyzedEmails, onSelect }) {
                   {email.subject}
                 </div>
                 <div className="text-[10px] text-gray-400 truncate mt-0.5">
-                  {email.body.content.substring(0, 60)}...
+                  {(email.body.content || '').substring(0, 60)}...
                 </div>
               </div>
             </div>

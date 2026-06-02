@@ -4,8 +4,10 @@ import AttackDetection from './AttackDetection';
 import AttackAnalysis from './AttackAnalysis';
 import DefenseConfig from './DefenseConfig';
 import DDoSQuiz from './DDoSQuiz';
+import AdvancedBriefing from './AdvancedBriefing';
 
 function DDoSSimulation({ simulation, onComplete }) {
+  const [phase, setPhase] = useState('briefing');
   const [currentStage, setCurrentStage] = useState('detection');
   const [stageScores, setStageScores] = useState({
     detection: { score: 0, max: 0 },
@@ -60,6 +62,10 @@ function DDoSSimulation({ simulation, onComplete }) {
 
     return { total: Math.round(total), max };
   };
+
+  if (phase === 'briefing') {
+    return <AdvancedBriefing simulationType="ddos" onComplete={() => setPhase('simulation')} />;
+  }
 
   if (isShuttingDown) {
     const { total, max } = calculateTotalScore();

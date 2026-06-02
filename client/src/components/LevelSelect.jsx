@@ -37,7 +37,7 @@ function LevelSelect({ onSelectLevel }) {
                 className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold mb-6 mx-auto shadow-lg"
                 style={{ backgroundColor: `${level.color}30`, color: level.color }}
               >
-                {level.id === 'beginner' ? '🌱' : level.id === 'intermediate' ? '🔥' : ''}
+                {level.id === 'beginner' ? '🌱' : level.id === 'intermediate' ? '🔥' : '💀'}
               </div>
               <h2 className="text-2xl font-bold text-white text-center mb-2 drop-shadow-md">{level.name}</h2>
               <p className="text-gray-300 text-center text-sm mb-4">{level.description}</p>

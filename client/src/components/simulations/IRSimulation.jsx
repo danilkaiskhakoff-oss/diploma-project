@@ -4,8 +4,10 @@ import DetectionTriage from './DetectionTriage';
 import AnalysisContainment from './AnalysisContainment';
 import EradicationRecovery from './EradicationRecovery';
 import IRQuiz from './IRQuiz';
+import AdvancedBriefing from './AdvancedBriefing';
 
 function IRSimulation({ simulation, onComplete }) {
+  const [phase, setPhase] = useState('briefing');
   const [currentStage, setCurrentStage] = useState('triage');
   const [stageScores, setStageScores] = useState({
     triage: { score: 0, max: 0 },
@@ -63,6 +65,10 @@ function IRSimulation({ simulation, onComplete }) {
 
     return { total: Math.round(total), max };
   };
+
+  if (phase === 'briefing') {
+    return <AdvancedBriefing simulationType="incident-response" onComplete={() => setPhase('simulation')} />;
+  }
 
   if (isShuttingDown) {
     const { total, max } = calculateTotalScore();

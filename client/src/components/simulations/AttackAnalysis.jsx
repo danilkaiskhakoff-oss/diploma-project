@@ -131,51 +131,54 @@ function AttackAnalysis({ onComplete }) {
         </div>
 
         {/* Packet Details */}
-        {selectedType && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6"
-          >
-            <h3 className="text-lg font-bold text-white mb-4">
-              Захваченные пакеты — {attackTypes.find(t => t.id === selectedType).name}
-            </h3>
+        {selectedType && (() => {
+          const attackType = attackTypes.find(t => t.id === selectedType);
+          if (!attackType) return null;
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6"
+            >
+              <h3 className="text-lg font-bold text-white mb-4">
+                Захваченные пакеты — {attackType.name}
+              </h3>
 
-            {/* Packet Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-left py-2 px-3 text-gray-400 font-medium">Protocol</th>
-                    <th className="text-left py-2 px-3 text-gray-400 font-medium">Source</th>
-                    <th className="text-left py-2 px-3 text-gray-400 font-medium">Destination</th>
-                    <th className="text-left py-2 px-3 text-gray-400 font-medium">Port</th>
-                    <th className="text-left py-2 px-3 text-gray-400 font-medium">Size</th>
-                    <th className="text-left py-2 px-3 text-gray-400 font-medium">Flags</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attackTypes.find(t => t.id === selectedType).packets.map((pkt, i) => (
-                    <tr key={i} className="border-b border-gray-800 font-mono text-xs">
-                      <td className="py-2 px-3 text-green-400">{pkt.protocol}</td>
-                      <td className="py-2 px-3 text-gray-300">{pkt.src}</td>
-                      <td className="py-2 px-3 text-gray-300">{pkt.dst}</td>
-                      <td className="py-2 px-3 text-yellow-400">{pkt.port}</td>
-                      <td className="py-2 px-3 text-gray-300">{pkt.size}</td>
-                      <td className="py-2 px-3 text-red-400">{pkt.flags}</td>
+              {/* Packet Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left py-2 px-3 text-gray-400 font-medium">Protocol</th>
+                      <th className="text-left py-2 px-3 text-gray-400 font-medium">Source</th>
+                      <th className="text-left py-2 px-3 text-gray-400 font-medium">Destination</th>
+                      <th className="text-left py-2 px-3 text-gray-400 font-medium">Port</th>
+                      <th className="text-left py-2 px-3 text-gray-400 font-medium">Size</th>
+                      <th className="text-left py-2 px-3 text-gray-400 font-medium">Flags</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {attackType.packets.map((pkt, i) => (
+                      <tr key={i} className="border-b border-gray-800 font-mono text-xs">
+                        <td className="py-2 px-3 text-green-400">{pkt.protocol}</td>
+                        <td className="py-2 px-3 text-gray-300">{pkt.src}</td>
+                        <td className="py-2 px-3 text-gray-300">{pkt.dst}</td>
+                        <td className="py-2 px-3 text-yellow-400">{pkt.port}</td>
+                        <td className="py-2 px-3 text-gray-300">{pkt.size}</td>
+                        <td className="py-2 px-3 text-red-400">{pkt.flags}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-            {/* Pattern Analysis */}
-            <div className="mt-4 p-4 bg-gray-950 rounded-lg border border-gray-800">
-              <p className="text-sm text-gray-300">
-                <span className="text-blue-400 font-medium">Паттерн: </span>
-                {attackTypes.find(t => t.id === selectedType).pattern}
-              </p>
-            </div>
+              {/* Pattern Analysis */}
+              <div className="mt-4 p-4 bg-gray-950 rounded-lg border border-gray-800">
+                <p className="text-sm text-gray-300">
+                  <span className="text-blue-400 font-medium">Паттерн: </span>
+                  {attackType.pattern}
+                </p>
+              </div>
 
             {/* Explanation */}
             {showExplanation && (
@@ -199,6 +202,8 @@ function AttackAnalysis({ onComplete }) {
               </motion.div>
             )}
           </motion.div>
+          );
+        })()}
         )}
       </div>
 

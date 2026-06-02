@@ -62,7 +62,7 @@ function PhishingAnalysis({ email, userChoice, onNext, isLast }) {
               <div className="space-y-2">
                 {email.suspiciousElements.map((element) => (
                   <div key={element.id} className="flex items-start gap-2 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <span className="text-yellow-600 mt-0.5">️</span>
+                    <span className="text-yellow-600 mt-0.5">⚠️</span>
                     <div>
                       <div className="text-xs font-medium text-yellow-800">
                         {element.type === 'sender' ? 'Отправитель' :

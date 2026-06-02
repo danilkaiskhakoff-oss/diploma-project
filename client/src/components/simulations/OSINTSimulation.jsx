@@ -4,8 +4,10 @@ import GoogleDorks from './GoogleDorks';
 import ShodanRecon from './ShodanRecon';
 import SocialRecon from './SocialRecon';
 import OSINTQuiz from './OSINTQuiz';
+import AdvancedBriefing from './AdvancedBriefing';
 
 function OSINTSimulation({ simulation, onComplete }) {
+  const [phase, setPhase] = useState('briefing');
   const [currentStage, setCurrentStage] = useState('dorks');
   const [stageScores, setStageScores] = useState({
     dorks: { score: 0, max: 0 },
@@ -15,17 +17,12 @@ function OSINTSimulation({ simulation, onComplete }) {
   const [quizScore, setQuizScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [isShuttingDown, setIsShuttingDown] = useState(false);
-  const [targetProfile, setTargetProfile] = useState({});
 
   const handleStageComplete = (stage, result) => {
     setStageScores(prev => ({
       ...prev,
       [stage]: result
     }));
-
-    if (stage === 'social' && result.profile) {
-      setTargetProfile(result.profile);
-    }
 
     const stages = ['dorks', 'shodan', 'social'];
     const currentIndex = stages.indexOf(stage);
@@ -60,6 +57,10 @@ function OSINTSimulation({ simulation, onComplete }) {
 
     return { total: Math.round(total), max };
   };
+
+  if (phase === 'briefing') {
+    return <AdvancedBriefing simulationType="osint" onComplete={() => setPhase('simulation')} />;
+  }
 
   if (isShuttingDown) {
     const { total, max } = calculateTotalScore();

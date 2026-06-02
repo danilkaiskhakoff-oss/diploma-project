@@ -54,6 +54,7 @@ const steps = [
 
 function EradicationRecovery({ incidentType, onComplete }) {
   const [completedSteps, setCompletedSteps] = useState([]);
+  const [skippedSteps, setSkippedSteps] = useState([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -79,8 +80,8 @@ function EradicationRecovery({ incidentType, onComplete }) {
   };
 
   const handleSkip = (stepId) => {
-    if (completedSteps.includes(stepId)) return;
-    setCompletedSteps(prev => [...prev, stepId]);
+    if (completedSteps.includes(stepId) || skippedSteps.includes(stepId)) return;
+    setSkippedSteps(prev => [...prev, stepId]);
     if (stepId === steps[currentStepIndex].id) {
       setCurrentStepIndex(prev => prev + 1);
     }
@@ -215,7 +216,7 @@ function EradicationRecovery({ incidentType, onComplete }) {
               </div>
               <div className="bg-gray-950 rounded-lg p-3">
                 <div className="text-xs text-gray-500 font-mono">Пропущено</div>
-                <div className="text-lg font-bold text-yellow-400 font-mono">{steps.length - completedSteps.length}</div>
+                <div className="text-lg font-bold text-yellow-400 font-mono">{skippedSteps.length}</div>
               </div>
               <div className="bg-gray-950 rounded-lg p-3">
                 <div className="text-xs text-gray-500 font-mono">Статус</div>

@@ -91,7 +91,7 @@ function DefenseConfig({ attackType, onComplete }) {
       total += d.effectiveness[currentAttack] || 0;
     });
     
-    return Math.min(Math.round(total / defenses.length + (defenses.length * 5)), 100);
+    return Math.min(Math.round(total / defenses.length), 100);
   };
 
   const handleActivate = () => {

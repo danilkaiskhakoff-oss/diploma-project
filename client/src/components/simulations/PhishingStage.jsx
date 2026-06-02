@@ -132,7 +132,7 @@ function PhishingStage({ onComplete }) {
       </div>
 
       {/* Next Button */}
-      {foundCount > 0 && (
+      {foundCount === phishingEmail.suspiciousElements.length && (
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

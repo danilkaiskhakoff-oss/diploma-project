@@ -29,7 +29,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
   if (checkpoint.type === 'simulation' && checkpoint.simulation) {
     if (checkpoint.simulation.type === 'phishing') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <Desktop
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -41,7 +41,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'passwords') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <PasswordSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -53,7 +53,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'data-protection') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <DataProtectionSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -65,7 +65,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'social-media') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <SocialMediaSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -77,7 +77,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'cyber-basics') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <CyberBasicsSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -89,7 +89,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'network-attacks') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <NetworkAttacksSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -101,7 +101,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'social-engineering') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <SocialEngineeringSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -113,7 +113,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'malware') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <MalwareSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -125,7 +125,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'wifi-security') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <WifiSecuritySimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -137,7 +137,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'insider-threats') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <InsiderThreatsSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -149,7 +149,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'ddos') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <DDoSSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -161,7 +161,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'pentest') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <PentestSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -173,7 +173,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'incident-response') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <IRSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {
@@ -185,7 +185,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
     if (checkpoint.simulation.type === 'osint') {
       return (
-        <div className="absolute inset-0 z-20">
+        <div className="absolute inset-0 z-20 bg-gray-950">
           <OSINTSimulation
             simulation={checkpoint.simulation}
             onComplete={() => {

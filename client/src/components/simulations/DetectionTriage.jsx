@@ -113,7 +113,9 @@ function DetectionTriage({ onComplete }) {
           [alertId]: { isTruePositive: current.isTruePositive, priority }
         }));
         setSelectedAlert(null);
-        return { ...prev, [alertId]: undefined };
+        const newPending = { ...prev };
+        delete newPending[alertId];
+        return newPending;
       }
 
       return { ...prev, [alertId]: updated };
@@ -324,24 +326,23 @@ function DetectionTriage({ onComplete }) {
       </div>
 
       {/* Footer */}
-      {triageComplete && (
-        <div className="bg-gray-900 border-t border-red-900 px-6 py-4">
-          <div className="flex justify-between text-sm text-gray-400 mb-3 font-mono">
-            <span>Классифицировано: {classifiedCount}/{alerts.length}</span>
-            <span>TP: {truePositiveCount} | FP: {falsePositiveCount}</span>
-          </div>
-          <button
-            onClick={handleNext}
-            className={`w-full py-3 font-medium rounded-lg transition font-mono ${
-              classifiedCount === alerts.length
-                ? 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
-                : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            Перейти к анализу и содерживанию →
-          </button>
+      <div className="bg-gray-900 border-t border-red-900 px-6 py-4">
+        <div className="flex justify-between text-sm text-gray-400 mb-3 font-mono">
+          <span>Классифицировано: {classifiedCount}/{alerts.length}</span>
+          <span>TP: {truePositiveCount} | FP: {falsePositiveCount}</span>
         </div>
-      )}
+        <button
+          onClick={handleNext}
+          disabled={classifiedCount < alerts.length}
+          className={`w-full py-3 font-medium rounded-lg transition font-mono ${
+            classifiedCount === alerts.length
+              ? 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
+              : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+          }`}
+        >
+          Перейти к анализу и содерживанию →
+        </button>
+      </div>
     </div>
   );
 }

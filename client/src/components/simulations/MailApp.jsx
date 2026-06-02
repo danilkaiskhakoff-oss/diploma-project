@@ -9,6 +9,7 @@ function MailApp({ simulation, hintsEnabled, onClose, onComplete }) {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [userChoice, setUserChoice] = useState(null);
   const [analyzedEmails, setAnalyzedEmails] = useState([]);
+  const [activeFolder, setActiveFolder] = useState('Входящие');
 
   const emails = simulation.emails;
 
@@ -24,6 +25,10 @@ function MailApp({ simulation, hintsEnabled, onClose, onComplete }) {
     if (!analyzedEmails.includes(selectedEmail.id)) {
       setAnalyzedEmails([...analyzedEmails, selectedEmail.id]);
     }
+    
+    // Dispatch threat update for ThreatMeter
+    const isCorrect = (choice === 'phishing' && selectedEmail.isPhishing) || (choice === 'safe' && !selectedEmail.isPhishing);
+    window.dispatchEvent(new CustomEvent('threatUpdate', { detail: { correct: isCorrect } }));
   };
 
   const handleNext = () => {
@@ -66,7 +71,6 @@ function MailApp({ simulation, hintsEnabled, onClose, onComplete }) {
           }}
         >
           <div className="flex items-center gap-2">
-            <span className="text-lg"></span>
             <span className="text-white text-sm font-medium drop-shadow">
               Почта — Входящие ({unreadCount} непрочитанных)
             </span>
@@ -123,26 +127,38 @@ function MailApp({ simulation, hintsEnabled, onClose, onComplete }) {
               borderRight: '1px solid rgba(0,0,0,0.15)'
             }}
           >
-            <FolderItem name="Входящие" count={unreadCount} active />
-            <FolderItem name="Отправленные" />
-            <FolderItem name="Черновики" />
-            <FolderItem name="Спам" />
-            <FolderItem name="Удалённые" />
+            <FolderItem name="Входящие" count={unreadCount} active={activeFolder === 'Входящие'} onClick={() => setActiveFolder('Входящие')} />
+            <FolderItem name="Отправленные" active={activeFolder === 'Отправленные'} onClick={() => setActiveFolder('Отправленные')} />
+            <FolderItem name="Черновики" active={activeFolder === 'Черновики'} onClick={() => setActiveFolder('Черновики')} />
+            <FolderItem name="Спам" active={activeFolder === 'Спам'} onClick={() => setActiveFolder('Спам')} />
+            <FolderItem name="Удалённые" active={activeFolder === 'Удалённые'} onClick={() => setActiveFolder('Удалённые')} />
           </div>
 
           {/* Email List */}
-          <div className="w-72 flex-shrink-0 overflow-y-auto border-r border-gray-300/50">
-            <EmailList
-              emails={emails}
-              selectedEmail={selectedEmail}
-              analyzedEmails={analyzedEmails}
-              onSelect={handleEmailSelect}
-            />
-          </div>
+          {activeFolder === 'Входящие' ? (
+            <div className="w-72 flex-shrink-0 overflow-y-auto border-r border-gray-300/50">
+              <EmailList
+                emails={emails}
+                selectedEmail={selectedEmail}
+                analyzedEmails={analyzedEmails}
+                onSelect={handleEmailSelect}
+              />
+            </div>
+          ) : (
+            <div className="w-72 flex-shrink-0 border-r border-gray-300/50 flex items-center justify-center text-gray-400 text-sm">
+              Папка пуста
+            </div>
+          )}
 
           {/* Email View */}
           <div className="flex-1 overflow-y-auto bg-white/95">
-            {selectedEmail ? (
+            {activeFolder !== 'Входящие' ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                <span className="text-6xl mb-4">📭</span>
+                <p className="text-lg font-medium">Папка пуста</p>
+                <p className="text-sm mt-2">В этой папке нет писем</p>
+              </div>
+            ) : selectedEmail ? (
               <EmailView
                 email={selectedEmail}
                 hintsEnabled={hintsEnabled}
@@ -209,14 +225,24 @@ function ToolbarButton({ icon, label, disabled }) {
   );
 }
 
-function FolderItem({ name, count, active }) {
+function FolderItem({ name, count, active, onClick }) {
   return (
-    <div
+    <motion.div
       className="flex items-center justify-between px-3 py-1.5 text-xs cursor-pointer"
       style={{
-        background: active ? 'rgba(0,100,200,0.15)' : 'transparent',
-        borderLeft: active ? '2px solid #3b82f6' : '2px solid transparent'
+        background: active
+          ? 'linear-gradient(to bottom, rgba(0,100,200,0.2) 0%, rgba(0,80,160,0.15) 100%)'
+          : 'transparent',
+        borderLeft: active ? '2px solid #3b82f6' : '2px solid transparent',
+        boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.3)' : 'none'
       }}
+      whileHover={{
+        background: active
+          ? 'linear-gradient(to bottom, rgba(0,100,200,0.25) 0%, rgba(0,80,160,0.2) 100%)'
+          : 'linear-gradient(to bottom, rgba(0,100,200,0.08) 0%, rgba(0,80,160,0.05) 100%)'
+      }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
     >
       <span className="text-gray-700">{name}</span>
       {count > 0 && (
@@ -224,7 +250,7 @@ function FolderItem({ name, count, active }) {
           {count}
         </span>
       )}
-    </div>
+    </motion.div>
   );
 }
 
