@@ -204,7 +204,6 @@ function AttackAnalysis({ onComplete }) {
           </motion.div>
           );
         })()}
-        )}
       </div>
 
       {/* Footer */}
