@@ -39,8 +39,10 @@ function LevelSelect({ onSelectLevel }) {
               >
                 {level.id === 'beginner' ? '🌱' : level.id === 'intermediate' ? '🔥' : '💀'}
               </div>
-              <h2 className="text-2xl font-bold text-white text-center mb-2 drop-shadow-md">{level.name}</h2>
-              <p className="text-gray-300 text-center text-sm mb-4">{level.description}</p>
+              <h2 className="text-4xl font-bold text-white text-center mb-2 drop-shadow-md">
+                {level.id === 'beginner' ? 'Beginner' : level.id === 'intermediate' ? 'Intermediate' : 'Advanced'}
+              </h2>
+              <p className="text-gray-300 text-center text-base mb-4">{level.description}</p>
               <div className="text-center">
                 <span className="text-xs text-gray-400">{level.checkpoints.length} тем</span>
               </div>
