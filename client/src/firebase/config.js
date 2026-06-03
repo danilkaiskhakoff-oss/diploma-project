@@ -2,8 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-// TODO: Replace with your Firebase project config
-// Get this from Firebase Console → Project Settings → Your apps → Web app
+// Firebase configuration
+// If env vars are not set, Firebase will not be initialized
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
@@ -13,11 +13,26 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Check if Firebase is configured
+const isFirebaseConfigured = !!(
+  firebaseConfig.apiKey &&
+  firebaseConfig.projectId
+);
 
-// Export Firebase services
-export const db = getFirestore(app);
-export const auth = getAuth(app);
+// Initialize Firebase only if configured
+let app, db, auth;
+
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+  } catch (error) {
+    console.warn('Firebase initialization failed:', error);
+  }
+}
+
+// Export Firebase services (may be undefined if not configured)
+export { db, auth, app, isFirebaseConfigured };
 
 export default app;

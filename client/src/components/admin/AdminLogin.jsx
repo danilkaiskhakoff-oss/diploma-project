@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../firebase/config';
+import { auth, isFirebaseConfigured } from '../../firebase/config';
 
 function AdminLogin({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -13,6 +13,12 @@ function AdminLogin({ onLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    if (!isFirebaseConfigured || !auth) {
+      setError('Firebase не настроен. Обратитесь к администратору.');
+      setLoading(false);
+      return;
+    }
 
     try {
       await signInWithEmailAndPassword(auth, email, password);

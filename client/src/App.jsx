@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase/config';
+import { auth, isFirebaseConfigured } from './firebase/config';
 import LevelSelect from './components/LevelSelect';
 import Map3D from './components/Map3D';
 import AdminPanel from './components/admin/AdminPanel';
@@ -15,13 +15,16 @@ function App() {
     // Check if on admin route
     setIsAdminRoute(window.location.pathname === '/admin');
 
-    // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsAdmin(!!user);
+    // Listen for auth state changes only if Firebase is configured
+    if (isFirebaseConfigured && auth) {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setIsAdmin(!!user);
+        setChecking(false);
+      });
+      return unsubscribe;
+    } else {
       setChecking(false);
-    });
-
-    return unsubscribe;
+    }
   }, []);
 
   const handleReset = () => {

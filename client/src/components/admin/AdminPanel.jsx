@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { signOut } from 'firebase/auth';
-import { auth } from '../../firebase/config';
+import { auth, isFirebaseConfigured } from '../../firebase/config';
 import AdminLogin from './AdminLogin';
 import AdminSidebar from './AdminSidebar';
 import AdminDashboard from './AdminDashboard';
@@ -14,7 +14,9 @@ function AdminPanel({ isLoggedIn }) {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      if (auth) {
+        await signOut(auth);
+      }
       window.location.reload();
     } catch (error) {
       console.error('Error signing out:', error);
@@ -33,6 +35,27 @@ function AdminPanel({ isLoggedIn }) {
 
   if (!isLoggedIn) {
     return <AdminLogin onLogin={() => window.location.reload()} />;
+  }
+
+  if (!isFirebaseConfigured) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-950">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-white mb-4">Firebase не настроен</h2>
+          <p className="text-gray-400 mb-6">
+            Для работы админ-панели необходимо настроить Firebase.<br/>
+            См. инструкцию в ADMIN_SETUP.md
+          </p>
+          <a
+            href="/"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Вернуться на сайт
+          </a>
+        </div>
+      </div>
+    );
   }
 
   const renderContent = () => {
