@@ -11,6 +11,7 @@ import LevelList from './levels/LevelList';
 import LevelEditor from './levels/LevelEditor';
 import BriefingList from './briefings/BriefingList';
 import BriefingEditor from './briefings/BriefingEditor';
+import SimulationList from './simulations/SimulationList';
 
 function AdminPanel({ isLoggedIn }) {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -59,6 +60,11 @@ function AdminPanel({ isLoggedIn }) {
     setActiveSection('briefings');
   };
 
+  const handleNavigateToLevelFromSim = (levelId) => {
+    setSelectedLevel(levelId);
+    setActiveSection('level-editor');
+  };
+
   if (!isLoggedIn) {
     return <AdminLogin onLogin={() => window.location.reload()} />;
   }
@@ -103,12 +109,7 @@ function AdminPanel({ isLoggedIn }) {
       case 'briefing-editor':
         return <BriefingEditor briefingId={selectedBriefing} onBack={handleBackToBriefings} />;
       case 'simulations':
-        return (
-          <div className="p-8">
-            <h2 className="text-3xl font-bold text-white mb-4">Симуляции</h2>
-            <p className="text-gray-400">Редактирование симуляций скоро будет доступно</p>
-          </div>
-        );
+        return <SimulationList onNavigateToLevel={handleNavigateToLevelFromSim} />;
       default:
         return <AdminDashboard />;
     }
