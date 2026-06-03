@@ -7,10 +7,13 @@ import AdminDashboard from './AdminDashboard';
 import QuizList from './quizzes/QuizList';
 import QuizEditor from './quizzes/QuizEditor';
 import ThemeEditor from './ui-config/ThemeEditor';
+import LevelList from './levels/LevelList';
+import LevelEditor from './levels/LevelEditor';
 
 function AdminPanel({ isLoggedIn }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [selectedLevel, setSelectedLevel] = useState(null);
 
   const handleLogout = async () => {
     try {
@@ -31,6 +34,16 @@ function AdminPanel({ isLoggedIn }) {
   const handleBackToQuizzes = () => {
     setSelectedQuiz(null);
     setActiveSection('quizzes');
+  };
+
+  const handleSelectLevel = (levelId) => {
+    setSelectedLevel(levelId);
+    setActiveSection('level-editor');
+  };
+
+  const handleBackToLevels = () => {
+    setSelectedLevel(null);
+    setActiveSection('levels');
   };
 
   if (!isLoggedIn) {
@@ -61,7 +74,7 @@ function AdminPanel({ isLoggedIn }) {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <AdminDashboard />;
+        return <AdminDashboard onNavigate={(section) => setActiveSection(section)} />;
       case 'quizzes':
         return <QuizList onSelectQuiz={handleSelectQuiz} />;
       case 'quiz-editor':
@@ -69,12 +82,9 @@ function AdminPanel({ isLoggedIn }) {
       case 'ui-config':
         return <ThemeEditor />;
       case 'levels':
-        return (
-          <div className="p-8">
-            <h2 className="text-3xl font-bold text-white mb-4">Уровни</h2>
-            <p className="text-gray-400">Редактирование уровней скоро будет доступно</p>
-          </div>
-        );
+        return <LevelList onSelectLevel={handleSelectLevel} />;
+      case 'level-editor':
+        return <LevelEditor levelId={selectedLevel} onBack={handleBackToLevels} />;
       case 'briefings':
         return (
           <div className="p-8">
@@ -97,10 +107,13 @@ function AdminPanel({ isLoggedIn }) {
   return (
     <div className="flex h-screen bg-gray-950">
       <AdminSidebar
-        activeSection={activeSection === 'quiz-editor' ? 'quizzes' : activeSection}
+        activeSection={
+          activeSection === 'quiz-editor' ? 'quizzes' : activeSection === 'level-editor' ? 'levels' : activeSection
+        }
         onNavigate={(section) => {
           setActiveSection(section);
           setSelectedQuiz(null);
+          setSelectedLevel(null);
         }}
         onLogout={handleLogout}
       />

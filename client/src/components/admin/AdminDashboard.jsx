@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 
-function AdminDashboard() {
+function AdminDashboard({ onNavigate }) {
   const [stats, setStats] = useState({
     levels: 0,
     quizzes: 0,
@@ -83,20 +83,29 @@ function AdminDashboard() {
       <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
         <h3 className="text-xl font-bold text-white mb-4">Быстрые действия</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-2xl mb-2">📝</div>
+          <div
+            onClick={() => onNavigate?.('levels')}
+            className="bg-gray-800 rounded-lg p-4 border border-gray-700 cursor-pointer hover:border-blue-600/50 transition"
+          >
+            <div className="text-2xl mb-2">🎯</div>
+            <h4 className="text-white font-medium mb-1">Редактировать уровни</h4>
+            <p className="text-gray-400 text-sm">Управление чекпоинтами и контентом</p>
+          </div>
+          <div
+            onClick={() => onNavigate?.('quizzes')}
+            className="bg-gray-800 rounded-lg p-4 border border-gray-700 cursor-pointer hover:border-blue-600/50 transition"
+          >
+            <div className="text-2xl mb-2"></div>
             <h4 className="text-white font-medium mb-1">Редактировать квизы</h4>
             <p className="text-gray-400 text-sm">Изменяйте вопросы и ответы</p>
           </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <div
+            onClick={() => onNavigate?.('ui-config')}
+            className="bg-gray-800 rounded-lg p-4 border border-gray-700 cursor-pointer hover:border-blue-600/50 transition"
+          >
             <div className="text-2xl mb-2">🎨</div>
             <h4 className="text-white font-medium mb-1">Настроить тему</h4>
             <p className="text-gray-400 text-sm">Цвета, шрифты, стили</p>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <div className="text-2xl mb-2"></div>
-            <h4 className="text-white font-medium mb-1">Редактировать брифинги</h4>
-            <p className="text-gray-400 text-sm">Контент для Advanced уровней</p>
           </div>
         </div>
       </div>
