@@ -1,0 +1,332 @@
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../../../firebase/config';
+
+function BriefingEditor({ briefingId, onBack }) {
+  const [briefing, setBriefing] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [activeSection, setActiveSection] = useState(null);
+
+  useEffect(() => {
+    loadBriefing();
+  }, [briefingId]);
+
+  const loadBriefing = async () => {
+    try {
+      const docRef = doc(db, 'briefings', briefingId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = { id: docSnap.id, ...docSnap.data() };
+        setBriefing(data);
+        setFormData(data);
+      }
+    } catch (error) {
+      console.error('Error loading briefing:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const docRef = doc(db, 'briefings', briefingId);
+      await updateDoc(docRef, formData);
+      setBriefing(formData);
+      setEditMode(false);
+    } catch (error) {
+      console.error('Error saving briefing:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleFieldChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  const handleScenarioChange = (field, value) => {
+    setFormData({
+      ...formData,
+      scenario: { ...formData.scenario, [field]: value },
+    });
+  };
+
+  const handleConceptChange = (index, field, value) => {
+    const updatedConcepts = [...(formData.concepts || [])];
+    if (!updatedConcepts[index]) updatedConcepts[index] = {};
+    updatedConcepts[index][field] = value;
+    setFormData({ ...formData, concepts: updatedConcepts });
+  };
+
+  const handleStageChange = (index, field, value) => {
+    const updatedStages = [...(formData.stages || [])];
+    if (!updatedStages[index]) updatedStages[index] = {};
+    updatedStages[index][field] = value;
+    setFormData({ ...formData, stages: updatedStages });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-gray-400">Загрузка брифинга...</div>
+      </div>
+    );
+  }
+
+  if (!briefing) {
+    return (
+      <div className="p-8">
+        <h2 className="text-3xl font-bold text-white mb-4">Брифинг не найден</h2>
+        <button onClick={onBack} className="text-blue-400 hover:text-blue-300">
+          ← Назад к брифингам
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <button onClick={onBack} className="text-gray-400 hover:text-white mb-2 block">
+            ← Назад к брифингам
+          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{briefing.icon || '📄'}</span>
+            <div>
+              <h2 className="text-3xl font-bold text-white">{briefing.title}</h2>
+              <p className="text-gray-400">{briefing.subtitle}</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          {editMode ? (
+            <>
+              <button
+                onClick={() => setEditMode(false)}
+                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {saving ? 'Сохранение...' : 'Сохранить'}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setEditMode(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Редактировать
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {/* Сценарий */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden"
+        >
+          <button
+            onClick={() => setActiveSection(activeSection === 'scenario' ? null : 'scenario')}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800/50 transition"
+          >
+            <h3 className="text-lg font-bold text-white">Сценарий</h3>
+            <span className="text-gray-400">{activeSection === 'scenario' ? '▲' : '▼'}</span>
+          </button>
+
+          {activeSection === 'scenario' && (
+            <div className="px-6 py-4 border-t border-gray-800 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Роль</label>
+                {editMode ? (
+                  <input
+                    type="text"
+                    value={formData.scenario?.role || ''}
+                    onChange={(e) => handleScenarioChange('role', e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                  />
+                ) : (
+                  <p className="text-white">{briefing.scenario?.role}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Компания</label>
+                {editMode ? (
+                  <input
+                    type="text"
+                    value={formData.scenario?.company || ''}
+                    onChange={(e) => handleScenarioChange('company', e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                  />
+                ) : (
+                  <p className="text-white">{briefing.scenario?.company}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Ситуация</label>
+                {editMode ? (
+                  <textarea
+                    value={formData.scenario?.situation || ''}
+                    onChange={(e) => handleScenarioChange('situation', e.target.value)}
+                    rows={3}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                  />
+                ) : (
+                  <p className="text-gray-300 whitespace-pre-wrap text-sm">{briefing.scenario?.situation}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Цель</label>
+                {editMode ? (
+                  <textarea
+                    value={formData.scenario?.goal || ''}
+                    onChange={(e) => handleScenarioChange('goal', e.target.value)}
+                    rows={2}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                  />
+                ) : (
+                  <p className="text-gray-300 whitespace-pre-wrap text-sm">{briefing.scenario?.goal}</p>
+                )}
+              </div>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Концепты */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden"
+        >
+          <button
+            onClick={() => setActiveSection(activeSection === 'concepts' ? null : 'concepts')}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800/50 transition"
+          >
+            <h3 className="text-lg font-bold text-white">
+              Концепты ({briefing.concepts?.length || 0})
+            </h3>
+            <span className="text-gray-400">{activeSection === 'concepts' ? '▲' : '▼'}</span>
+          </button>
+
+          {activeSection === 'concepts' && (
+            <div className="px-6 py-4 border-t border-gray-800 space-y-4">
+              {(briefing.concepts || []).map((concept, index) => (
+                <div key={index} className="bg-gray-800 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-xl">{concept.icon || '📌'}</span>
+                    {editMode ? (
+                      <input
+                        type="text"
+                        value={formData.concepts?.[index]?.term || ''}
+                        onChange={(e) => handleConceptChange(index, 'term', e.target.value)}
+                        className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                        placeholder="Термин"
+                      />
+                    ) : (
+                      <h4 className="text-white font-medium">{concept.term}</h4>
+                    )}
+                  </div>
+                  <div className="space-y-2 ml-8">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Определение</label>
+                      {editMode ? (
+                        <textarea
+                          value={formData.concepts?.[index]?.definition || ''}
+                          onChange={(e) => handleConceptChange(index, 'definition', e.target.value)}
+                          rows={2}
+                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                        />
+                      ) : (
+                        <p className="text-gray-300 text-sm">{concept.definition}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Пример</label>
+                      {editMode ? (
+                        <textarea
+                          value={formData.concepts?.[index]?.example || ''}
+                          onChange={(e) => handleConceptChange(index, 'example', e.target.value)}
+                          rows={2}
+                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                        />
+                      ) : (
+                        <p className="text-gray-400 text-sm italic">{concept.example}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Этапы */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden"
+        >
+          <button
+            onClick={() => setActiveSection(activeSection === 'stages' ? null : 'stages')}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800/50 transition"
+          >
+            <h3 className="text-lg font-bold text-white">
+              Этапы ({briefing.stages?.length || 0})
+            </h3>
+            <span className="text-gray-400">{activeSection === 'stages' ? '▲' : '▼'}</span>
+          </button>
+
+          {activeSection === 'stages' && (
+            <div className="px-6 py-4 border-t border-gray-800 space-y-3">
+              {(briefing.stages || []).map((stage, index) => (
+                <div key={index} className="bg-gray-800 rounded-lg p-3 flex items-center gap-4">
+                  <span className="text-xl">{stage.icon || ''}</span>
+                  <div className="flex-1">
+                    {editMode ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={formData.stages?.[index]?.name || ''}
+                          onChange={(e) => handleStageChange(index, 'name', e.target.value)}
+                          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
+                          placeholder="Название"
+                        />
+                        <input
+                          type="text"
+                          value={formData.stages?.[index]?.desc || ''}
+                          onChange={(e) => handleStageChange(index, 'desc', e.target.value)}
+                          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
+                          placeholder="Описание"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-white text-sm font-medium">{stage.name}</p>
+                        <p className="text-gray-400 text-xs">{stage.desc}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+export default BriefingEditor;

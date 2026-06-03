@@ -9,11 +9,14 @@ import QuizEditor from './quizzes/QuizEditor';
 import ThemeEditor from './ui-config/ThemeEditor';
 import LevelList from './levels/LevelList';
 import LevelEditor from './levels/LevelEditor';
+import BriefingList from './briefings/BriefingList';
+import BriefingEditor from './briefings/BriefingEditor';
 
 function AdminPanel({ isLoggedIn }) {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(null);
+  const [selectedBriefing, setSelectedBriefing] = useState(null);
 
   const handleLogout = async () => {
     try {
@@ -44,6 +47,16 @@ function AdminPanel({ isLoggedIn }) {
   const handleBackToLevels = () => {
     setSelectedLevel(null);
     setActiveSection('levels');
+  };
+
+  const handleSelectBriefing = (briefingId) => {
+    setSelectedBriefing(briefingId);
+    setActiveSection('briefing-editor');
+  };
+
+  const handleBackToBriefings = () => {
+    setSelectedBriefing(null);
+    setActiveSection('briefings');
   };
 
   if (!isLoggedIn) {
@@ -86,12 +99,9 @@ function AdminPanel({ isLoggedIn }) {
       case 'level-editor':
         return <LevelEditor levelId={selectedLevel} onBack={handleBackToLevels} />;
       case 'briefings':
-        return (
-          <div className="p-8">
-            <h2 className="text-3xl font-bold text-white mb-4">Брифинги</h2>
-            <p className="text-gray-400">Редактирование брифингов скоро будет доступно</p>
-          </div>
-        );
+        return <BriefingList onSelectBriefing={handleSelectBriefing} />;
+      case 'briefing-editor':
+        return <BriefingEditor briefingId={selectedBriefing} onBack={handleBackToBriefings} />;
       case 'simulations':
         return (
           <div className="p-8">
@@ -108,12 +118,19 @@ function AdminPanel({ isLoggedIn }) {
     <div className="flex h-screen bg-gray-950">
       <AdminSidebar
         activeSection={
-          activeSection === 'quiz-editor' ? 'quizzes' : activeSection === 'level-editor' ? 'levels' : activeSection
+          activeSection === 'quiz-editor'
+            ? 'quizzes'
+            : activeSection === 'level-editor'
+            ? 'levels'
+            : activeSection === 'briefing-editor'
+            ? 'briefings'
+            : activeSection
         }
         onNavigate={(section) => {
           setActiveSection(section);
           setSelectedQuiz(null);
           setSelectedLevel(null);
+          setSelectedBriefing(null);
         }}
         onLogout={handleLogout}
       />
