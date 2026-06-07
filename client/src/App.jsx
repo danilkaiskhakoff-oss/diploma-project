@@ -1,24 +1,31 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from './firebase/config';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import LevelSelect from './components/LevelSelect';
 import Map3D from './components/Map3D';
 import AdminPanel from './components/admin/AdminPanel';
+import ProfilePage from './components/ProfilePage';
+import AuthModal from './components/AuthModal';
 
-function App() {
+function AppContent() {
+  const { user, isRegistered } = useAuth();
   const [selectedLevel, setSelectedLevel] = useState(null);
   const [isAdminRoute, setIsAdminRoute] = useState(false);
+  const [isProfileRoute, setIsProfileRoute] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState('login');
 
   useEffect(() => {
-    // Check if on admin route
-    setIsAdminRoute(window.location.pathname === '/admin');
+    const path = window.location.pathname;
+    setIsAdminRoute(path === '/admin');
+    setIsProfileRoute(path === '/profile');
 
-    // Listen for auth state changes only if Firebase is configured
     if (isFirebaseConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setIsAdmin(!!user);
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        setIsAdmin(!!firebaseUser);
         setChecking(false);
       });
       return unsubscribe;
@@ -29,9 +36,21 @@ function App() {
 
   const handleReset = () => {
     setSelectedLevel(null);
+    window.history.pushState({}, '', '/');
   };
 
-  // Show admin panel if on /admin route
+  const handleNavigate = (path) => {
+    window.history.pushState({}, '', path);
+    setIsAdminRoute(path === '/admin');
+    setIsProfileRoute(path === '/profile');
+  };
+
+  const handleOpenAuth = (tab = 'login') => {
+    setAuthModalTab(tab);
+    setShowAuthModal(true);
+  };
+
+  // Admin panel
   if (isAdminRoute) {
     if (checking) {
       return (
@@ -40,15 +59,57 @@ function App() {
         </div>
       );
     }
-    return <AdminPanel isLoggedIn={isAdmin} />;
+    return (
+      <>
+        <AdminPanel isLoggedIn={isAdmin} />
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+      </>
+    );
+  }
+
+  // Profile page — only for registered users
+  if (isProfileRoute) {
+    if (!isRegistered) {
+      window.history.pushState({}, '', '/');
+      return <LevelSelect onSelectLevel={setSelectedLevel} onOpenAuth={handleOpenAuth} user={user} />;
+    }
+    return (
+      <>
+        <ProfilePage />
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+      </>
+    );
   }
 
   // Main app
   if (!selectedLevel) {
-    return <LevelSelect onSelectLevel={setSelectedLevel} />;
+    return (
+      <>
+        <LevelSelect onSelectLevel={setSelectedLevel} onOpenAuth={handleOpenAuth} user={user} />
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+      </>
+    );
   }
 
-  return <Map3D level={selectedLevel} onReset={handleReset} />;
+  return (
+    <>
+      <Map3D
+        level={selectedLevel}
+        onReset={handleReset}
+        user={user}
+        onOpenAuth={handleOpenAuth}
+      />
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+    </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
 }
 
 export default App;

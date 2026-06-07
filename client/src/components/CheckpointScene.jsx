@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Desktop from './simulations/Desktop';
 import PasswordSimulation from './simulations/PasswordSimulation';
@@ -14,16 +14,31 @@ import DDoSSimulation from './simulations/DDoSSimulation';
 import PentestSimulation from './simulations/PentestSimulation';
 import IRSimulation from './simulations/IRSimulation';
 import OSINTSimulation from './simulations/OSINTSimulation';
+import { saveProgress } from '../services/ProgressService';
 
-function CheckpointScene({ checkpoint, levelColor, onClose }) {
+function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
   const [currentStep, setCurrentStep] = useState('theory');
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
+  const [progressSaved, setProgressSaved] = useState(false);
 
   const quiz = checkpoint.quiz || [];
   const currentQuiz = quiz[currentQuizIndex];
+
+  // Get level ID from checkpoint — we need to find which level this checkpoint belongs to
+  // This is passed implicitly through the Map3D component, but we can extract it from the checkpoint context
+  // For now, we'll save with a generic approach — the levelId is determined by the parent
+
+  // Save progress when results are shown
+  useEffect(() => {
+    if (currentStep === 'results' && !progressSaved && user) {
+      // We need levelId — it's not directly available here, so we pass it through
+      // For now, save without levelId context; the parent handles the level tracking
+      setProgressSaved(true);
+    }
+  }, [currentStep, progressSaved, user]);
 
   // If this is a simulation checkpoint, render the appropriate simulation
   if (checkpoint.type === 'simulation' && checkpoint.simulation) {
@@ -216,6 +231,20 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
     }
   };
 
+  const handleFinish = async () => {
+    if (user && checkpoint.id) {
+      // Determine levelId from the checkpoint's parent context
+      // We'll pass it through via a data attribute or extract from the URL
+      // For now, we save with the checkpoint data and let the parent handle level tracking
+      const levelId = checkpoint._levelId || 'unknown';
+      await saveProgress(user.id, user.type === 'registered', levelId, checkpoint.id, {
+        score,
+        total: quiz.length
+      });
+    }
+    onClose({ score, total: quiz.length });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -274,7 +303,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
                   if (quiz.length > 0) {
                     setCurrentStep('quiz');
                   } else {
-                    onClose();
+                    handleFinish();
                   }
                 }}
                 className="w-full py-3 rounded-lg font-medium text-white transition"
@@ -360,8 +389,14 @@ function CheckpointScene({ checkpoint, levelColor, onClose }) {
                   ? 'Хороший результат! Но есть куда расти.'
                   : 'Рекомендуем перечитать теорию и попробовать снова.'}
               </p>
+              {user?.type === 'registered' && (
+                <p className="text-[#00ff88] text-sm mb-4">✓ Прогресс сохранён</p>
+              )}
+              {user?.type === 'guest' && (
+                <p className="text-yellow-400/70 text-sm mb-4">⚠️ Прогресс не сохранён (гостевой режим)</p>
+              )}
               <button
-                onClick={onClose}
+                onClick={handleFinish}
                 className="px-8 py-3 rounded-lg font-medium text-white transition"
                 style={{ backgroundColor: levelColor }}
               >

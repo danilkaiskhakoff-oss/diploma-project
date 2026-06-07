@@ -1,8 +1,10 @@
-import { useState, useRef, Suspense } from 'react';
+import { useState, useRef, Suspense, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Html } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import CheckpointScene from './CheckpointScene';
+import WarningModal from './WarningModal';
+import { getProgress, getCompletedCheckpoints, saveProgress } from '../services/ProgressService';
 
 function CheckpointNode({ checkpoint, position, color, onClick, isCompleted }) {
   const meshRef = useRef();
@@ -89,17 +91,57 @@ function Scene({ level, onCheckpointClick, completedCheckpoints }) {
   );
 }
 
-function Map3D({ level, onReset }) {
+function Map3D({ level, onReset, user, onOpenAuth }) {
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
   const [completedCheckpoints, setCompletedCheckpoints] = useState([]);
+  const [showWarning, setShowWarning] = useState(false);
+  const [pendingCheckpoint, setPendingCheckpoint] = useState(null);
 
-  const handleCheckpointClick = (checkpoint) => {
-    setSelectedCheckpoint(checkpoint);
+  const isGuest = user?.type === 'guest';
+
+  // Load saved progress on mount
+  useEffect(() => {
+    if (user) {
+      loadProgress();
+    }
+  }, [user, level]);
+
+  const loadProgress = async () => {
+    if (!user) return;
+    const progress = await getProgress(user.id, user.type === 'registered');
+    const completed = getCompletedCheckpoints(progress, level.id);
+    setCompletedCheckpoints(completed);
   };
 
-  const handleComplete = () => {
+  const handleCheckpointClick = (checkpoint) => {
+    if (isGuest) {
+      setPendingCheckpoint(checkpoint);
+      setShowWarning(true);
+    } else {
+      setSelectedCheckpoint(checkpoint);
+    }
+  };
+
+  const handleContinueAsGuest = () => {
+    setShowWarning(false);
+    if (pendingCheckpoint) {
+      setSelectedCheckpoint(pendingCheckpoint);
+      setPendingCheckpoint(null);
+    }
+  };
+
+  const handleRegisterFromWarning = () => {
+    setShowWarning(false);
+    setPendingCheckpoint(null);
+    onOpenAuth('register');
+  };
+
+  const handleComplete = async (data) => {
     if (selectedCheckpoint && !completedCheckpoints.includes(selectedCheckpoint.id)) {
       setCompletedCheckpoints([...completedCheckpoints, selectedCheckpoint.id]);
+    }
+    if (user && selectedCheckpoint && data) {
+      await saveProgress(user.id, user.type === 'registered', level.id, selectedCheckpoint.id, data);
     }
     setSelectedCheckpoint(null);
   };
@@ -147,12 +189,20 @@ function Map3D({ level, onReset }) {
       <AnimatePresence>
         {selectedCheckpoint && (
           <CheckpointScene
-            checkpoint={selectedCheckpoint}
+            checkpoint={{ ...selectedCheckpoint, _levelId: level.id }}
             levelColor={level.color}
             onClose={handleComplete}
+            user={user}
           />
         )}
       </AnimatePresence>
+
+      <WarningModal
+        isOpen={showWarning}
+        onClose={() => { setShowWarning(false); setPendingCheckpoint(null); }}
+        onContinue={handleContinueAsGuest}
+        onRegister={handleRegisterFromWarning}
+      />
     </div>
   );
 }
