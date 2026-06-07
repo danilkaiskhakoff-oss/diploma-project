@@ -25,7 +25,8 @@ function AppContent() {
 
     if (isFirebaseConfigured && auth) {
       const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        setIsAdmin(!!firebaseUser);
+        // Only registered (non-anonymous) users are admins
+        setIsAdmin(!!firebaseUser && !firebaseUser.isAnonymous);
         setChecking(false);
       });
       return unsubscribe;

@@ -4,15 +4,12 @@ import WifiSelection from './WifiSelection';
 import MITMVisualization from './MITMVisualization';
 import ProtectionPanel from './ProtectionPanel';
 import LogAnalysis from './LogAnalysis';
-import NetworkAttacksQuiz from './NetworkAttacksQuiz';
 
 function NetworkAttacksSimulation({ simulation, onComplete }) {
   const [bootPhase, setBootPhase] = useState('black');
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState('wifi');
   const [isShuttingDown, setIsShuttingDown] = useState(false);
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
 
   // Stage scores
   const [stageScores, setStageScores] = useState({
@@ -39,7 +36,9 @@ function NetworkAttacksSimulation({ simulation, onComplete }) {
 
   const handleShutdown = () => {
     setIsShuttingDown(true);
-    setTimeout(() => onComplete(), 2500);
+    let stageScore = 0, stageMax = 0;
+    Object.values(stageScores).forEach(s => { stageScore += s.score; stageMax += s.max; });
+    setTimeout(() => onComplete({ stageScore, stageMax }), 2500);
   };
 
   const handleStageComplete = (stage, result) => {
@@ -52,36 +51,23 @@ function NetworkAttacksSimulation({ simulation, onComplete }) {
       setWifiChoice(result.choice);
     }
 
-    // Move to next stage
     const stages = ['wifi', 'mitm', 'protection', 'logs'];
     const currentIndex = stages.indexOf(stage);
     if (currentIndex < stages.length - 1) {
       setCurrentStage(stages[currentIndex + 1]);
     } else {
-      setCurrentStage('quiz');
-      setShowQuiz(true);
+      handleShutdown();
     }
-  };
-
-  const handleQuizComplete = (score) => {
-    setQuizScore(score);
-    handleShutdown();
   };
 
   // Calculate total score
   const calculateScore = () => {
     let total = 0;
     let max = 0;
-
     Object.values(stageScores).forEach(stage => {
       total += stage.score;
       max += stage.max;
     });
-
-    // Quiz (20 points)
-    total += (quizScore / 4) * 20;
-    max += 20;
-
     return { total: Math.round(total), max };
   };
 
@@ -134,10 +120,7 @@ function NetworkAttacksSimulation({ simulation, onComplete }) {
                 <span>LOG_ANALYSIS</span>
                 <span className="text-green-400">{stageScores.logs.score}/{stageScores.logs.max}</span>
               </div>
-              <div className="flex justify-between">
-                <span>QUIZ</span>
-                <span className="text-green-400">{Math.round((quizScore / 4) * 20)}/20</span>
-              </div>
+
             </div>
           </motion.div>
 
@@ -324,17 +307,6 @@ function NetworkAttacksSimulation({ simulation, onComplete }) {
                     </motion.div>
                   )}
 
-                  {currentStage === 'quiz' && (
-                    <motion.div
-                      key="quiz"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="h-full"
-                    >
-                      <NetworkAttacksQuiz onComplete={handleQuizComplete} />
-                    </motion.div>
-                  )}
                 </AnimatePresence>
               </div>
             </div>

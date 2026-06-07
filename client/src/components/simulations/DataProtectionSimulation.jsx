@@ -34,7 +34,11 @@ function DataProtectionSimulation({ simulation, onComplete }) {
 
   const handleShutdown = () => {
     setIsShuttingDown(true);
-    setTimeout(() => onComplete(), 2500);
+    let score = 0;
+    if (twoFactorEnabled) score += 33;
+    if (backupStrategy && backupStrategy !== 'none') score += 33;
+    if (filesEncrypted) score += 34;
+    setTimeout(() => onComplete({ stageScore: score, stageMax: 100 }), 2500);
   };
 
   const handleTwoFactorComplete = (method) => {

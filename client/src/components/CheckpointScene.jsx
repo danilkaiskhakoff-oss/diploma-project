@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Desktop from './simulations/Desktop';
 import PasswordSimulation from './simulations/PasswordSimulation';
@@ -14,7 +14,6 @@ import DDoSSimulation from './simulations/DDoSSimulation';
 import PentestSimulation from './simulations/PentestSimulation';
 import IRSimulation from './simulations/IRSimulation';
 import OSINTSimulation from './simulations/OSINTSimulation';
-import { saveProgress } from '../services/ProgressService';
 
 function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -22,195 +21,36 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
-  const [progressSaved, setProgressSaved] = useState(false);
+  const [stageResult, setStageResult] = useState(null);
 
   const quiz = checkpoint.quiz || [];
   const currentQuiz = quiz[currentQuizIndex];
 
-  // Get level ID from checkpoint — we need to find which level this checkpoint belongs to
-  // This is passed implicitly through the Map3D component, but we can extract it from the checkpoint context
-  // For now, we'll save with a generic approach — the levelId is determined by the parent
+  const simulationComponents = {
+    'phishing': Desktop,
+    'passwords': PasswordSimulation,
+    'data-protection': DataProtectionSimulation,
+    'social-media': SocialMediaSimulation,
+    'cyber-basics': CyberBasicsSimulation,
+    'network-attacks': NetworkAttacksSimulation,
+    'social-engineering': SocialEngineeringSimulation,
+    'malware': MalwareSimulation,
+    'wifi-security': WifiSecuritySimulation,
+    'insider-threats': InsiderThreatsSimulation,
+    'ddos': DDoSSimulation,
+    'pentest': PentestSimulation,
+    'incident-response': IRSimulation,
+    'osint': OSINTSimulation,
+  };
 
-  // Save progress when results are shown
-  useEffect(() => {
-    if (currentStep === 'results' && !progressSaved && user) {
-      // We need levelId — it's not directly available here, so we pass it through
-      // For now, save without levelId context; the parent handles the level tracking
-      setProgressSaved(true);
+  const handleSimulationComplete = (data) => {
+    setStageResult(data || { stageScore: 1, stageMax: 1 });
+    if (quiz.length > 0) {
+      setCurrentStep('quiz');
+    } else {
+      setCurrentStep('results');
     }
-  }, [currentStep, progressSaved, user]);
-
-  // If this is a simulation checkpoint, render the appropriate simulation
-  if (checkpoint.type === 'simulation' && checkpoint.simulation) {
-    if (checkpoint.simulation.type === 'phishing') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <Desktop
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'passwords') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <PasswordSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'data-protection') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <DataProtectionSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'social-media') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <SocialMediaSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'cyber-basics') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <CyberBasicsSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'network-attacks') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <NetworkAttacksSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'social-engineering') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <SocialEngineeringSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'malware') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <MalwareSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'wifi-security') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <WifiSecuritySimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'insider-threats') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <InsiderThreatsSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'ddos') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <DDoSSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'pentest') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <PentestSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'incident-response') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <IRSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-    if (checkpoint.simulation.type === 'osint') {
-      return (
-        <div className="absolute inset-0 z-20 bg-gray-950">
-          <OSINTSimulation
-            simulation={checkpoint.simulation}
-            onComplete={() => {
-              onClose();
-            }}
-          />
-        </div>
-      );
-    }
-  }
+  };
 
   const handleAnswerSelect = (index) => {
     if (showExplanation) return;
@@ -231,19 +71,29 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
     }
   };
 
-  const handleFinish = async () => {
-    if (user && checkpoint.id) {
-      // Determine levelId from the checkpoint's parent context
-      // We'll pass it through via a data attribute or extract from the URL
-      // For now, we save with the checkpoint data and let the parent handle level tracking
-      const levelId = checkpoint._levelId || 'unknown';
-      await saveProgress(user.id, user.type === 'registered', levelId, checkpoint.id, {
-        score,
-        total: quiz.length
-      });
-    }
-    onClose({ score, total: quiz.length });
+  const handleFinish = () => {
+    onClose({
+      stageScore: stageResult?.stageScore || 0,
+      stageMax: stageResult?.stageMax || 0,
+      quizScore: score,
+      quizTotal: quiz.length
+    });
   };
+
+  // Render simulation
+  if (currentStep === 'simulation' && checkpoint.simulation) {
+    const SimComponent = simulationComponents[checkpoint.simulation.type];
+    if (SimComponent) {
+      return (
+        <div className="absolute inset-0 z-20 bg-gray-950">
+          <SimComponent
+            simulation={checkpoint.simulation}
+            onComplete={handleSimulationComplete}
+          />
+        </div>
+      );
+    }
+  }
 
   return (
     <motion.div
@@ -260,36 +110,27 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
       >
         <div className="p-6 border-b border-gray-800 flex justify-between items-center">
           <h2 className="text-2xl font-bold text-white">{checkpoint.title}</h2>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-400 hover:text-white transition"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="px-4 py-2 text-gray-400 hover:text-white transition">✕</button>
         </div>
 
         <div className="p-6">
+          {/* Theory Step */}
           {currentStep === 'theory' && (
             <div>
               <h3 className="text-xl font-bold mb-4" style={{ color: levelColor }}>
-                {checkpoint.theory.title}
+                {checkpoint.theory?.title || checkpoint.title}
               </h3>
               <div className="text-gray-300 whitespace-pre-line leading-relaxed mb-6">
-                {checkpoint.theory.content}
+                {checkpoint.theory?.content || 'Изучите материал перед началом симуляции.'}
               </div>
 
-              {checkpoint.theory.references && checkpoint.theory.references.length > 0 && (
+              {checkpoint.theory?.references && checkpoint.theory.references.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="text-sm font-bold text-gray-400 mb-2"> Дополнительные материалы:</h4>
+                  <h4 className="text-sm font-bold text-gray-400 mb-2">Дополнительные материалы:</h4>
                   <ul className="space-y-2">
                     {checkpoint.theory.references.map((ref, i) => (
                       <li key={i}>
-                        <a
-                          href={ref.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300 text-sm underline"
-                        >
+                        <a href={ref.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-sm underline">
                           {ref.title}
                         </a>
                       </li>
@@ -299,30 +140,21 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
               )}
 
               <button
-                onClick={() => {
-                  if (quiz.length > 0) {
-                    setCurrentStep('quiz');
-                  } else {
-                    handleFinish();
-                  }
-                }}
+                onClick={() => setCurrentStep('simulation')}
                 className="w-full py-3 rounded-lg font-medium text-white transition"
                 style={{ backgroundColor: levelColor }}
               >
-                {quiz.length > 0 ? 'Перейти к задаче →' : 'Завершить'}
+                Начать симуляцию →
               </button>
             </div>
           )}
 
+          {/* Quiz Step */}
           {currentStep === 'quiz' && currentQuiz && (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-gray-400">
-                  Задача {currentQuizIndex + 1} из {quiz.length}
-                </span>
-                <span className="text-sm font-bold" style={{ color: levelColor }}>
-                  Счёт: {score}
-                </span>
+                <span className="text-sm text-gray-400">Задача {currentQuizIndex + 1} из {quiz.length}</span>
+                <span className="text-sm font-bold" style={{ color: levelColor }}>Счёт: {score}</span>
               </div>
 
               <h3 className="text-lg font-bold text-white mb-6">{currentQuiz.question}</h3>
@@ -373,28 +205,46 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
             </div>
           )}
 
+          {/* Results Step */}
           {currentStep === 'results' && (
             <div className="text-center">
               <div className="text-6xl mb-4">
-                {score === quiz.length ? '🏆' : score >= quiz.length / 2 ? '👍' : '📚'}
+                {score === quiz.length && stageResult?.stageScore === stageResult?.stageMax ? '🏆' :
+                 score >= quiz.length / 2 ? '👍' : '📚'}
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Результат</h3>
-              <p className="text-4xl font-bold mb-4" style={{ color: levelColor }}>
-                {score}/{quiz.length}
-              </p>
+
+              <div className="space-y-2 mb-6">
+                {stageResult && (
+                  <p className="text-lg text-gray-300">
+                    Симуляция: <span style={{ color: levelColor }}>{stageResult.stageScore}/{stageResult.stageMax}</span>
+                  </p>
+                )}
+                {quiz.length > 0 && (
+                  <p className="text-lg text-gray-300">
+                    Квиз: <span style={{ color: levelColor }}>{score}/{quiz.length}</span>
+                  </p>
+                )}
+                <p className="text-3xl font-bold mt-4" style={{ color: levelColor }}>
+                  {(stageResult?.stageScore || 0) + score} / {(stageResult?.stageMax || 0) + quiz.length}
+                </p>
+              </div>
+
               <p className="text-gray-400 mb-6">
-                {score === quiz.length
-                  ? 'Отлично! Вы прошли все задачи!'
+                {score === quiz.length && stageResult?.stageScore === stageResult?.stageMax
+                  ? 'Отлично! Идеальный результат!'
                   : score >= quiz.length / 2
                   ? 'Хороший результат! Но есть куда расти.'
                   : 'Рекомендуем перечитать теорию и попробовать снова.'}
               </p>
+
               {user?.type === 'registered' && (
-                <p className="text-[#00ff88] text-sm mb-4">✓ Прогресс сохранён</p>
+                <p className="text-[#00ff88] text-sm mb-4">✓ Прогресс сохранён в аккаунт</p>
               )}
-              {user?.type === 'guest' && (
-                <p className="text-yellow-400/70 text-sm mb-4">⚠️ Прогресс не сохранён (гостевой режим)</p>
+              {user?.type === 'anonymous' && (
+                <p className="text-yellow-400/70 text-sm mb-4">️ Прогресс сохранён локально</p>
               )}
+
               <button
                 onClick={handleFinish}
                 className="px-8 py-3 rounded-lg font-medium text-white transition"

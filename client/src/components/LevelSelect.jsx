@@ -3,7 +3,7 @@ import { levels } from '../data/levels';
 import CyberThreatMap from './CyberThreatMap';
 
 function LevelSelect({ onSelectLevel, onOpenAuth, user }) {
-  const isGuest = user?.type === 'guest';
+  const isAnonymous = user?.type === 'anonymous';
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
@@ -15,7 +15,7 @@ function LevelSelect({ onSelectLevel, onOpenAuth, user }) {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          {isGuest ? (
+          {isAnonymous ? (
             <>
               <span className="text-xs text-gray-500 hidden sm:inline">Гостевой режим</span>
               <button
@@ -68,14 +68,14 @@ function LevelSelect({ onSelectLevel, onOpenAuth, user }) {
             <span className="text-[#00ff88]">Cyber</span>Security
           </h1>
           <p className="text-gray-200 text-lg drop-shadow-lg">Интерактивный обучающий ресурс</p>
-          {isGuest && (
+          {isAnonymous && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
               className="text-yellow-400/70 text-sm mt-3"
             >
-              ⚠️ Вы вошли как гость — результаты не сохраняются
+              ⚠️ Вы не зарегистрированы — зарегистрируйтесь для сохранения прогресса на всех устройствах
             </motion.p>
           )}
         </motion.div>

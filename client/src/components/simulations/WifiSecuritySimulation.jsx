@@ -3,15 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import RouterSetup from './RouterSetup';
 import EvilTwinAttack from './EvilTwinAttack';
 import TrafficSniffing from './TrafficSniffing';
-import WifiQuiz from './WifiQuiz';
 
 function WifiSecuritySimulation({ simulation, onComplete }) {
   const [bootPhase, setBootPhase] = useState('black');
   const [routerOpen, setRouterOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState('setup');
   const [isShuttingDown, setIsShuttingDown] = useState(false);
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
 
   // Stage scores
   const [stageScores, setStageScores] = useState({
@@ -37,7 +34,9 @@ function WifiSecuritySimulation({ simulation, onComplete }) {
 
   const handleShutdown = () => {
     setIsShuttingDown(true);
-    setTimeout(() => onComplete(), 2500);
+    let stageScore = 0, stageMax = 0;
+    Object.values(stageScores).forEach(s => { stageScore += s.score; stageMax += s.max; });
+    setTimeout(() => onComplete({ stageScore, stageMax }), 2500);
   };
 
   const handleStageComplete = (stage, result) => {
@@ -53,35 +52,23 @@ function WifiSecuritySimulation({ simulation, onComplete }) {
       setNetworkChoice(result.choice);
     }
 
-    // Move to next stage
     const stages = ['setup', 'evilTwin', 'sniffing'];
     const currentIndex = stages.indexOf(stage);
     if (currentIndex < stages.length - 1) {
       setCurrentStage(stages[currentIndex + 1]);
     } else {
-      setShowQuiz(true);
+      handleShutdown();
     }
-  };
-
-  const handleQuizComplete = (score) => {
-    setQuizScore(score);
-    handleShutdown();
   };
 
   // Calculate total score
   const calculateScore = () => {
     let total = 0;
     let max = 0;
-
     Object.values(stageScores).forEach(stage => {
       total += stage.score;
       max += stage.max;
     });
-
-    // Quiz (20 points)
-    total += (quizScore / 4) * 20;
-    max += 20;
-
     return { total: Math.round(total), max };
   };
 
@@ -130,10 +117,7 @@ function WifiSecuritySimulation({ simulation, onComplete }) {
                 <span>Перехват трафика</span>
                 <span>{stageScores.sniffing.score}/{stageScores.sniffing.max}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Квиз</span>
-                <span>{Math.round((quizScore / 4) * 20)}/20</span>
-              </div>
+
             </div>
           </motion.div>
 
@@ -343,18 +327,6 @@ function WifiSecuritySimulation({ simulation, onComplete }) {
                           <TrafficSniffing
                             onComplete={(result) => handleStageComplete('sniffing', result)}
                           />
-                        </motion.div>
-                      )}
-
-                      {showQuiz && (
-                        <motion.div
-                          key="quiz"
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -20 }}
-                          className="h-full"
-                        >
-                          <WifiQuiz onComplete={handleQuizComplete} />
                         </motion.div>
                       )}
                     </AnimatePresence>

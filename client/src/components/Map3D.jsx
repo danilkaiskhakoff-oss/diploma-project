@@ -6,7 +6,7 @@ import CheckpointScene from './CheckpointScene';
 import WarningModal from './WarningModal';
 import { getProgress, getCompletedCheckpoints, saveProgress } from '../services/ProgressService';
 
-function CheckpointNode({ checkpoint, position, color, onClick, isCompleted }) {
+function CheckpointNode({ checkpoint, position, color, onClick, progressData }) {
   const meshRef = useRef();
   const [hovered, setHovered] = useState(false);
 
@@ -16,6 +16,14 @@ function CheckpointNode({ checkpoint, position, color, onClick, isCompleted }) {
       meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.2;
     }
   });
+
+  const isCompleted = progressData?.completed;
+  const scoreLabel = isCompleted && progressData?.totalScore !== undefined
+    ? ` ${progressData.totalScore}/${progressData.totalPossible}`
+    : '';
+  const labelColor = isCompleted
+    ? (progressData.totalScore === progressData.totalPossible ? '#00ff88' : '#ffaa00')
+    : color;
 
   return (
     <group position={position}>
@@ -41,21 +49,21 @@ function CheckpointNode({ checkpoint, position, color, onClick, isCompleted }) {
         <div
           className="text-xs font-bold px-2 py-1 rounded whitespace-nowrap"
           style={{
-            color: isCompleted ? '#00ff88' : color,
+            color: labelColor,
             textShadow: '0 0 10px rgba(0,0,0,0.9)',
             backgroundColor: 'rgba(10,10,15,0.7)',
             backdropFilter: 'blur(4px)',
             pointerEvents: 'none',
           }}
         >
-          {isCompleted ? '✓ ' : ''}{checkpoint.title}
+          {isCompleted ? '✓ ' : ''}{checkpoint.title}{scoreLabel}
         </div>
       </Html>
     </group>
   );
 }
 
-function Scene({ level, onCheckpointClick, completedCheckpoints }) {
+function Scene({ level, onCheckpointClick, progress }) {
   return (
     <>
       <ambientLight intensity={0.3} />
@@ -69,6 +77,7 @@ function Scene({ level, onCheckpointClick, completedCheckpoints }) {
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
         const y = Math.sin(angle * 2) * 1.5;
+        const cpProgress = progress?.[checkpoint.id];
         return (
           <CheckpointNode
             key={checkpoint.id}
@@ -76,7 +85,7 @@ function Scene({ level, onCheckpointClick, completedCheckpoints }) {
             position={[x, y, z]}
             color={level.color}
             onClick={() => onCheckpointClick(checkpoint)}
-            isCompleted={completedCheckpoints.includes(checkpoint.id)}
+            progressData={cpProgress}
           />
         );
       })}
@@ -93,13 +102,13 @@ function Scene({ level, onCheckpointClick, completedCheckpoints }) {
 
 function Map3D({ level, onReset, user, onOpenAuth }) {
   const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
+  const [progress, setProgress] = useState({});
   const [completedCheckpoints, setCompletedCheckpoints] = useState([]);
   const [showWarning, setShowWarning] = useState(false);
   const [pendingCheckpoint, setPendingCheckpoint] = useState(null);
 
-  const isGuest = user?.type === 'guest';
+  const isAnonymous = user?.type === 'anonymous';
 
-  // Load saved progress on mount
   useEffect(() => {
     if (user) {
       loadProgress();
@@ -108,13 +117,14 @@ function Map3D({ level, onReset, user, onOpenAuth }) {
 
   const loadProgress = async () => {
     if (!user) return;
-    const progress = await getProgress(user.id, user.type === 'registered');
-    const completed = getCompletedCheckpoints(progress, level.id);
+    const prog = await getProgress(user.id, user.type === 'registered');
+    setProgress(prog);
+    const completed = getCompletedCheckpoints(prog, level.id);
     setCompletedCheckpoints(completed);
   };
 
   const handleCheckpointClick = (checkpoint) => {
-    if (isGuest) {
+    if (isAnonymous) {
       setPendingCheckpoint(checkpoint);
       setShowWarning(true);
     } else {
@@ -142,6 +152,8 @@ function Map3D({ level, onReset, user, onOpenAuth }) {
     }
     if (user && selectedCheckpoint && data) {
       await saveProgress(user.id, user.type === 'registered', level.id, selectedCheckpoint.id, data);
+      // Reload progress to update the map
+      await loadProgress();
     }
     setSelectedCheckpoint(null);
   };
@@ -158,7 +170,7 @@ function Map3D({ level, onReset, user, onOpenAuth }) {
             <Scene
               level={level}
               onCheckpointClick={handleCheckpointClick}
-              completedCheckpoints={completedCheckpoints}
+              progress={progress[level.id] || {}}
             />
           </Suspense>
         </Canvas>
@@ -181,7 +193,7 @@ function Map3D({ level, onReset, user, onOpenAuth }) {
           </div>
 
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 bg-[#1a1a2e]/60 backdrop-blur px-4 py-2 rounded-lg border border-gray-800 text-center">
-            <p className="text-xs text-gray-400">🖱️ Вращайте камеру • Нажмите на точку</p>
+            <p className="text-xs text-gray-400">️ Вращайте камеру • Нажмите на точку</p>
           </div>
         </>
       )}

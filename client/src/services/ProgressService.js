@@ -3,26 +3,23 @@ import {
   doc,
   setDoc,
   getDoc,
-  collection,
   updateDoc
 } from 'firebase/firestore';
 import { levels } from '../data/levels';
 
-const GUEST_PREFIX = 'cyberedu_progress_';
-
-function getGuestKey(userId) {
-  return GUEST_PREFIX + userId;
-}
-
 export async function saveProgress(userId, isRegistered, levelId, checkpointId, data) {
   const progressData = {
     completed: true,
-    score: data.score || 0,
-    total: data.total || 0,
+    stageScore: data.stageScore || 0,
+    stageMax: data.stageMax || 0,
+    quizScore: data.quizScore || 0,
+    quizTotal: data.quizTotal || 0,
+    totalScore: (data.stageScore || 0) + (data.quizScore || 0),
+    totalPossible: (data.stageMax || 0) + (data.quizTotal || 0),
     completedAt: new Date().toISOString()
   };
 
-  if (isRegistered && isFirebaseConfigured && db) {
+  if (isFirebaseConfigured && db) {
     try {
       const userRef = doc(db, 'users', userId);
       const userSnap = await getDoc(userRef);
@@ -31,10 +28,25 @@ export async function saveProgress(userId, isRegistered, levelId, checkpointId, 
         const userData = userSnap.data();
         const progress = userData.progress || {};
         progress[levelId] = progress[levelId] || {};
-        progress[levelId][checkpointId] = progressData;
+        const existing = progress[levelId][checkpointId];
 
+        // Keep best score
+        if (existing && existing.bestScore !== undefined) {
+          progressData.bestScore = Math.max(existing.bestScore, progressData.totalScore);
+          progressData.bestTotal = Math.max(existing.bestTotal || progressData.totalPossible, progressData.totalPossible);
+          progressData.attempts = (existing.attempts || 1) + 1;
+        } else {
+          progressData.bestScore = progressData.totalScore;
+          progressData.bestTotal = progressData.totalPossible;
+          progressData.attempts = 1;
+        }
+
+        progress[levelId][checkpointId] = progressData;
         await updateDoc(userRef, { progress });
       } else {
+        progressData.bestScore = progressData.totalScore;
+        progressData.bestTotal = progressData.totalPossible;
+        progressData.attempts = 1;
         await setDoc(userRef, {
           progress: { [levelId]: { [checkpointId]: progressData } },
           createdAt: new Date().toISOString()
@@ -43,21 +55,11 @@ export async function saveProgress(userId, isRegistered, levelId, checkpointId, 
     } catch (error) {
       console.error('Error saving progress to Firestore:', error);
     }
-  } else {
-    try {
-      const key = getGuestKey(userId);
-      const existing = JSON.parse(localStorage.getItem(key) || '{}');
-      existing[levelId] = existing[levelId] || {};
-      existing[levelId][checkpointId] = progressData;
-      localStorage.setItem(key, JSON.stringify(existing));
-    } catch (error) {
-      console.error('Error saving guest progress:', error);
-    }
   }
 }
 
 export async function getProgress(userId, isRegistered) {
-  if (isRegistered && isFirebaseConfigured && db) {
+  if (isFirebaseConfigured && db) {
     try {
       const userRef = doc(db, 'users', userId);
       const userSnap = await getDoc(userRef);
@@ -68,28 +70,18 @@ export async function getProgress(userId, isRegistered) {
       console.error('Error loading progress from Firestore:', error);
     }
     return {};
-  } else {
-    try {
-      const key = getGuestKey(userId);
-      return JSON.parse(localStorage.getItem(key) || '{}');
-    } catch (error) {
-      console.error('Error loading guest progress:', error);
-      return {};
-    }
   }
+  return {};
 }
 
 export async function resetProgress(userId, isRegistered) {
-  if (isRegistered && isFirebaseConfigured && db) {
+  if (isFirebaseConfigured && db) {
     try {
       const userRef = doc(db, 'users', userId);
       await updateDoc(userRef, { progress: {} });
     } catch (error) {
       console.error('Error resetting progress:', error);
     }
-  } else {
-    const key = getGuestKey(userId);
-    localStorage.removeItem(key);
   }
 }
 
@@ -111,7 +103,6 @@ export function calculateStats(progress) {
   Object.entries(levels).forEach(([levelId, level]) => {
     const levelProgress = progress?.[levelId] || {};
     const levelCheckpoints = level.checkpoints.length;
-    totalCheckpoints += levelCheckpoints;
 
     let levelCompleted = 0;
     let levelScore = 0;
@@ -124,10 +115,10 @@ export function calculateStats(progress) {
       if (cpData && cpData.completed) {
         completedCheckpoints++;
         levelCompleted++;
-        totalScore += cpData.score;
-        totalPossible += cpData.total;
-        levelScore += cpData.score;
-        levelPossible += cpData.total;
+        totalScore += cpData.totalScore || 0;
+        totalPossible += cpData.totalPossible || 0;
+        levelScore += cpData.totalScore || 0;
+        levelPossible += cpData.totalPossible || 0;
 
         details.push({
           checkpointId: cp.id,
@@ -136,11 +127,15 @@ export function calculateStats(progress) {
           levelName: level.name,
           levelColor: level.color,
           completed: true,
-          score: cpData.score,
-          total: cpData.total,
+          score: cpData.totalScore || 0,
+          total: cpData.totalPossible || 0,
+          bestScore: cpData.bestScore || cpData.totalScore || 0,
+          bestTotal: cpData.bestTotal || cpData.totalPossible || 0,
+          attempts: cpData.attempts || 1,
           completedAt: cpData.completedAt
         });
       } else {
+        const quizLen = cp.quiz?.length || 0;
         details.push({
           checkpointId: cp.id,
           title: cp.title,
@@ -149,7 +144,10 @@ export function calculateStats(progress) {
           levelColor: level.color,
           completed: false,
           score: 0,
-          total: cp.quiz?.length || 0,
+          total: quizLen,
+          bestScore: 0,
+          bestTotal: quizLen,
+          attempts: 0,
           completedAt: null
         });
       }
@@ -167,7 +165,7 @@ export function calculateStats(progress) {
   });
 
   const overallPercentage = totalCheckpoints > 0 ? Math.round((completedCheckpoints / totalCheckpoints) * 100) : 0;
-  const averageScore = totalPossible > 0 ? (totalScore / totalPossible).toFixed(1) : '0.0';
+  const averageScore = totalPossible > 0 ? totalScore + '/' + totalPossible : '0/0';
 
   return {
     totalCheckpoints,
@@ -185,7 +183,7 @@ export function getAchievements(progress) {
 
   const allLevels = Object.values(stats.levelStats);
   const anyCompleted = stats.completedCheckpoints > 0;
-  const perfectQuiz = stats.details.some(d => d.completed && d.score === d.total && d.total > 0);
+  const perfectScore = stats.details.some(d => d.completed && d.score === d.total && d.total > 0);
   const intermediateComplete = allLevels.find(l => l.name === 'Средний')?.percentage === 100;
   const advancedComplete = allLevels.find(l => l.name === 'Продвинутый')?.percentage === 100;
 
@@ -204,111 +202,39 @@ export function getAchievements(progress) {
   const allBriefingsCompleted = allBriefings.length > 0 && allBriefings.every(d => d.completed);
 
   if (anyCompleted) {
-    achievements.push({
-      id: 'first-step',
-      icon: '🏆',
-      title: 'Первый шаг',
-      description: 'Пройден первый чекпоинт',
-      unlocked: true
-    });
+    achievements.push({ id: 'first-step', icon: '🏆', title: 'Первый шаг', description: 'Пройден первый чекпоинт', unlocked: true });
   } else {
-    achievements.push({
-      id: 'first-step',
-      icon: '🏆',
-      title: 'Первый шаг',
-      description: 'Пройден первый чекпоинт',
-      unlocked: false
-    });
+    achievements.push({ id: 'first-step', icon: '🏆', title: 'Первый шаг', description: 'Пройден первый чекпоинт', unlocked: false });
   }
 
-  if (perfectQuiz) {
-    achievements.push({
-      id: 'sniper',
-      icon: '🎯',
-      title: 'Снайпер',
-      description: '100% за квиз',
-      unlocked: true
-    });
+  if (perfectScore) {
+    achievements.push({ id: 'sniper', icon: '🎯', title: 'Снайпер', description: '100% за чекпоинт', unlocked: true });
   } else {
-    achievements.push({
-      id: 'sniper',
-      icon: '🎯',
-      title: 'Снайпер',
-      description: '100% за квиз',
-      unlocked: false
-    });
+    achievements.push({ id: 'sniper', icon: '🎯', title: 'Снайпер', description: '100% за чекпоинт', unlocked: false });
   }
 
   if (intermediateComplete) {
-    achievements.push({
-      id: 'on-fire',
-      icon: '🔥',
-      title: 'На огне',
-      description: 'Пройден весь Intermediate',
-      unlocked: true
-    });
+    achievements.push({ id: 'on-fire', icon: '🔥', title: 'На огне', description: 'Пройден весь Intermediate', unlocked: true });
   } else {
-    achievements.push({
-      id: 'on-fire',
-      icon: '🔥',
-      title: 'На огне',
-      description: 'Пройден весь Intermediate',
-      unlocked: false
-    });
+    achievements.push({ id: 'on-fire', icon: '🔥', title: 'На огне', description: 'Пройден весь Intermediate', unlocked: false });
   }
 
   if (advancedComplete) {
-    achievements.push({
-      id: 'hacker',
-      icon: '💀',
-      title: 'Хакер',
-      description: 'Пройден весь Advanced',
-      unlocked: true
-    });
+    achievements.push({ id: 'hacker', icon: '💀', title: 'Хакер', description: 'Пройден весь Advanced', unlocked: true });
   } else {
-    achievements.push({
-      id: 'hacker',
-      icon: '💀',
-      title: 'Хакер',
-      description: 'Пройден весь Advanced',
-      unlocked: false
-    });
+    achievements.push({ id: 'hacker', icon: '💀', title: 'Хакер', description: 'Пройден весь Advanced', unlocked: false });
   }
 
   if (allBriefingsCompleted) {
-    achievements.push({
-      id: 'theorist',
-      icon: '📚',
-      title: 'Теоретик',
-      description: 'Все брифинги прочитаны',
-      unlocked: true
-    });
+    achievements.push({ id: 'theorist', icon: '', title: 'Теоретик', description: 'Все брифинги прочитаны', unlocked: true });
   } else {
-    achievements.push({
-      id: 'theorist',
-      icon: '📚',
-      title: 'Теоретик',
-      description: 'Все брифинги прочитаны',
-      unlocked: false
-    });
+    achievements.push({ id: 'theorist', icon: '📚', title: 'Теоретик', description: 'Все брифинги прочитаны', unlocked: false });
   }
 
   if (allSimulationsCompleted) {
-    achievements.push({
-      id: 'defender',
-      icon: '🛡️',
-      title: 'Защитник',
-      description: 'Все симуляции пройдены',
-      unlocked: true
-    });
+    achievements.push({ id: 'defender', icon: '🛡️', title: 'Защитник', description: 'Все симуляции пройдены', unlocked: true });
   } else {
-    achievements.push({
-      id: 'defender',
-      icon: '🛡️',
-      title: 'Защитник',
-      description: 'Все симуляции пройдены',
-      unlocked: false
-    });
+    achievements.push({ id: 'defender', icon: '🛡️', title: 'Защитник', description: 'Все симуляции пройдены', unlocked: false });
   }
 
   return achievements;

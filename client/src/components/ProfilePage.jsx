@@ -11,6 +11,8 @@ function ProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [filter, setFilter] = useState('all'); // all, completed, incomplete
+  const [sortBy, setSortBy] = useState('date'); // date, score, name
 
   useEffect(() => {
     loadProgress();
@@ -47,6 +49,26 @@ function ProfilePage() {
     return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
+  const getFilteredDetails = () => {
+    if (!stats?.details) return [];
+    let filtered = [...stats.details];
+    if (filter === 'completed') filtered = filtered.filter(d => d.completed);
+    if (filter === 'incomplete') filtered = filtered.filter(d => !d.completed);
+
+    if (sortBy === 'date') {
+      filtered.sort((a, b) => {
+        if (!a.completedAt) return 1;
+        if (!b.completedAt) return -1;
+        return new Date(b.completedAt) - new Date(a.completedAt);
+      });
+    } else if (sortBy === 'score') {
+      filtered.sort((a, b) => (b.score || 0) - (a.score || 0));
+    } else if (sortBy === 'name') {
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+    }
+    return filtered;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -54,6 +76,8 @@ function ProfilePage() {
       </div>
     );
   }
+
+  const filteredDetails = getFilteredDetails();
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -84,7 +108,7 @@ function ProfilePage() {
                     {user?.displayName}
                   </h1>
                 )}
-                <p className="text-gray-400 text-sm">{user?.email || 'Гостевой режим'}</p>
+                <p className="text-gray-400 text-sm">{user?.email || 'Анонимный режим'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -130,9 +154,9 @@ function ProfilePage() {
             transition={{ delay: 0.1 }}
             className="bg-gray-900 rounded-xl p-6 border border-gray-800"
           >
-            <p className="text-gray-400 text-sm mb-1">Средний балл</p>
-            <p className="text-4xl font-bold text-yellow-400">{stats?.averageScore || '0.0'}</p>
-            <p className="text-gray-500 text-xs mt-3">из 5.0 возможных</p>
+            <p className="text-gray-400 text-sm mb-1">Общий балл</p>
+            <p className="text-4xl font-bold text-yellow-400">{stats?.averageScore || '0/0'}</p>
+            <p className="text-gray-500 text-xs mt-3">набрано / возможно</p>
           </motion.div>
 
           <motion.div
@@ -187,9 +211,43 @@ function ProfilePage() {
 
         {/* Detailed Table */}
         <div>
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <span className="text-[#00ff88]">📋</span> Детальные результаты
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <span className="text-[#00ff88]"></span> Детальные результаты
+            </h2>
+            <div className="flex items-center gap-2">
+              <div className="flex bg-gray-800 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`px-3 py-1 text-xs transition ${filter === 'all' ? 'bg-[#00ff88] text-gray-900 font-medium' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Все
+                </button>
+                <button
+                  onClick={() => setFilter('completed')}
+                  className={`px-3 py-1 text-xs transition ${filter === 'completed' ? 'bg-[#00ff88] text-gray-900 font-medium' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Пройденные
+                </button>
+                <button
+                  onClick={() => setFilter('incomplete')}
+                  className={`px-3 py-1 text-xs transition ${filter === 'incomplete' ? 'bg-[#00ff88] text-gray-900 font-medium' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Непройденные
+                </button>
+              </div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded-lg border border-gray-700 focus:border-[#00ff88] focus:outline-none"
+              >
+                <option value="date">По дате</option>
+                <option value="score">По баллу</option>
+                <option value="name">По названию</option>
+              </select>
+            </div>
+          </div>
+
           <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -199,11 +257,13 @@ function ProfilePage() {
                     <th className="text-left p-4 text-gray-400 font-medium">Уровень</th>
                     <th className="text-center p-4 text-gray-400 font-medium">Статус</th>
                     <th className="text-center p-4 text-gray-400 font-medium">Балл</th>
+                    <th className="text-center p-4 text-gray-400 font-medium hidden md:table-cell">Лучший</th>
+                    <th className="text-center p-4 text-gray-400 font-medium hidden md:table-cell">Попытки</th>
                     <th className="text-right p-4 text-gray-400 font-medium">Дата</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {stats?.details.map((d, i) => (
+                  {filteredDetails.map((d, i) => (
                     <tr key={d.checkpointId} className={`border-b border-gray-800/50 ${i % 2 === 0 ? 'bg-gray-900' : 'bg-gray-900/50'}`}>
                       <td className="p-4 font-medium">{d.title}</td>
                       <td className="p-4">
@@ -220,6 +280,12 @@ function ProfilePage() {
                       </td>
                       <td className="p-4 text-center font-mono">
                         {d.completed ? `${d.score}/${d.total}` : '—'}
+                      </td>
+                      <td className="p-4 text-center font-mono hidden md:table-cell">
+                        {d.completed ? `${d.bestScore}/${d.bestTotal}` : '—'}
+                      </td>
+                      <td className="p-4 text-center font-mono hidden md:table-cell">
+                        {d.attempts || '—'}
                       </td>
                       <td className="p-4 text-right text-gray-500">
                         {formatDate(d.completedAt)}

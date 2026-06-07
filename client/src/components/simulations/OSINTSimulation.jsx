@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GoogleDorks from './GoogleDorks';
 import ShodanRecon from './ShodanRecon';
 import SocialRecon from './SocialRecon';
-import OSINTQuiz from './OSINTQuiz';
 import AdvancedBriefing from './AdvancedBriefing';
 
 function OSINTSimulation({ simulation, onComplete }) {
@@ -14,7 +13,6 @@ function OSINTSimulation({ simulation, onComplete }) {
     shodan: { score: 0, max: 0 },
     social: { score: 0, max: 0 }
   });
-  const [quizScore, setQuizScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [isShuttingDown, setIsShuttingDown] = useState(false);
 
@@ -29,32 +27,24 @@ function OSINTSimulation({ simulation, onComplete }) {
     if (currentIndex < stages.length - 1) {
       setCurrentStage(stages[currentIndex + 1]);
     } else {
-      setCurrentStage('quiz');
+      setShowResults(true);
     }
-  };
-
-  const handleQuizComplete = (score) => {
-    setQuizScore(score);
-    setShowResults(true);
   };
 
   const handleShutdown = () => {
     setIsShuttingDown(true);
-    setTimeout(() => onComplete(), 2500);
+    let stageScore = 0, stageMax = 0;
+    Object.values(stageScores).forEach(s => { stageScore += s.score; stageMax += s.max; });
+    setTimeout(() => onComplete({ stageScore, stageMax }), 2500);
   };
 
   const calculateTotalScore = () => {
     let total = 0;
     let max = 0;
-
     Object.values(stageScores).forEach(stage => {
       total += stage.score;
       max += stage.max;
     });
-
-    total += (quizScore / 4) * 20;
-    max += 20;
-
     return { total: Math.round(total), max };
   };
 
@@ -104,10 +94,7 @@ function OSINTSimulation({ simulation, onComplete }) {
                 <span>Социальная разведка</span>
                 <span>{stageScores.social.score}/{stageScores.social.max}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Квиз</span>
-                <span>{Math.round((quizScore / 4) * 20)}/20</span>
-              </div>
+
             </div>
           </motion.div>
 
@@ -175,10 +162,7 @@ function OSINTSimulation({ simulation, onComplete }) {
                 <span>Социальная разведка</span>
                 <span>{stageScores.social.score}/{stageScores.social.max}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Квиз</span>
-                <span>{Math.round((quizScore / 4) * 20)}/20</span>
-              </div>
+
             </div>
           </motion.div>
 
@@ -238,18 +222,6 @@ function OSINTSimulation({ simulation, onComplete }) {
             <SocialRecon
               onComplete={(result) => handleStageComplete('social', result)}
             />
-          </motion.div>
-        )}
-
-        {currentStage === 'quiz' && (
-          <motion.div
-            key="quiz"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="h-full"
-          >
-            <OSINTQuiz onComplete={handleQuizComplete} />
           </motion.div>
         )}
       </AnimatePresence>

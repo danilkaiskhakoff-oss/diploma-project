@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AttackDetection from './AttackDetection';
 import AttackAnalysis from './AttackAnalysis';
 import DefenseConfig from './DefenseConfig';
-import DDoSQuiz from './DDoSQuiz';
 import AdvancedBriefing from './AdvancedBriefing';
 
 function DDoSSimulation({ simulation, onComplete }) {
@@ -14,7 +13,6 @@ function DDoSSimulation({ simulation, onComplete }) {
     analysis: { score: 0, max: 0 },
     defense: { score: 0, max: 0 }
   });
-  const [quizScore, setQuizScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [isShuttingDown, setIsShuttingDown] = useState(false);
   const [attackType, setAttackType] = useState(null);
@@ -34,32 +32,24 @@ function DDoSSimulation({ simulation, onComplete }) {
     if (currentIndex < stages.length - 1) {
       setCurrentStage(stages[currentIndex + 1]);
     } else {
-      setCurrentStage('quiz');
+      setShowResults(true);
     }
-  };
-
-  const handleQuizComplete = (score) => {
-    setQuizScore(score);
-    setShowResults(true);
   };
 
   const handleShutdown = () => {
     setIsShuttingDown(true);
-    setTimeout(() => onComplete(), 2500);
+    let stageScore = 0, stageMax = 0;
+    Object.values(stageScores).forEach(s => { stageScore += s.score; stageMax += s.max; });
+    setTimeout(() => onComplete({ stageScore, stageMax }), 2500);
   };
 
   const calculateTotalScore = () => {
     let total = 0;
     let max = 0;
-
     Object.values(stageScores).forEach(stage => {
       total += stage.score;
       max += stage.max;
     });
-
-    total += (quizScore / 4) * 20;
-    max += 20;
-
     return { total: Math.round(total), max };
   };
 
@@ -109,10 +99,7 @@ function DDoSSimulation({ simulation, onComplete }) {
                 <span>Настройка защиты</span>
                 <span>{stageScores.defense.score}/{stageScores.defense.max}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Квиз</span>
-                <span>{Math.round((quizScore / 4) * 20)}/20</span>
-              </div>
+
             </div>
           </motion.div>
 
@@ -180,10 +167,7 @@ function DDoSSimulation({ simulation, onComplete }) {
                 <span>Настройка защиты</span>
                 <span>{stageScores.defense.score}/{stageScores.defense.max}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Квиз</span>
-                <span>{Math.round((quizScore / 4) * 20)}/20</span>
-              </div>
+
             </div>
           </motion.div>
 
@@ -244,18 +228,6 @@ function DDoSSimulation({ simulation, onComplete }) {
               attackType={attackType}
               onComplete={(result) => handleStageComplete('defense', result)}
             />
-          </motion.div>
-        )}
-
-        {currentStage === 'quiz' && (
-          <motion.div
-            key="quiz"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="h-full"
-          >
-            <DDoSQuiz onComplete={handleQuizComplete} />
           </motion.div>
         )}
       </AnimatePresence>

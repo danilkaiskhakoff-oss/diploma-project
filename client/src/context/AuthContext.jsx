@@ -5,7 +5,10 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
-  onAuthStateChanged
+  onAuthStateChanged,
+  signInAnonymously,
+  linkWithCredential,
+  EmailAuthProvider
 } from 'firebase/auth';
 
 const AuthContext = createContext(null);
@@ -19,42 +22,44 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const guestId = localStorage.getItem('cyberedu_guest_id');
-    const guestName = localStorage.getItem('cyberedu_guest_name');
-
-    if (guestId) {
+    if (!isFirebaseConfigured || !auth) {
       setUser({
-        type: 'guest',
-        id: guestId,
-        displayName: guestName || 'Гость'
+        type: 'anonymous',
+        id: 'no_firebase_' + Date.now(),
+        displayName: 'Гость'
       });
       setLoading(false);
       return;
     }
 
-    if (!isFirebaseConfigured || !auth) {
-      const newGuestId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('cyberedu_guest_id', newGuestId);
-      setUser({ type: 'guest', id: newGuestId, displayName: 'Гость' });
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        localStorage.removeItem('cyberedu_guest_id');
-        localStorage.removeItem('cyberedu_guest_name');
         setUser({
-          type: 'registered',
+          type: firebaseUser.isAnonymous ? 'anonymous' : 'registered',
           id: firebaseUser.uid,
-          displayName: firebaseUser.displayName || 'Пользователь',
-          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || (firebaseUser.isAnonymous ? 'Гость' : 'Пользователь'),
+          email: firebaseUser.email || null,
           firebaseUser
         });
       } else {
-        const newGuestId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('cyberedu_guest_id', newGuestId);
-        setUser({ type: 'guest', id: newGuestId, displayName: 'Гость' });
+        // No user — sign in anonymously
+        try {
+          const result = await signInAnonymously(auth);
+          setUser({
+            type: 'anonymous',
+            id: result.user.uid,
+            displayName: 'Гость',
+            email: null,
+            firebaseUser: result.user
+          });
+        } catch (error) {
+          console.error('Anonymous sign in failed:', error);
+          setUser({
+            type: 'anonymous',
+            id: 'fallback_' + Date.now(),
+            displayName: 'Гость'
+          });
+        }
       }
       setLoading(false);
     });
@@ -62,10 +67,18 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
-  const loginAsGuest = () => {
-    const guestId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('cyberedu_guest_id', guestId);
-    setUser({ type: 'guest', id: guestId, displayName: 'Гость' });
+  const loginAsGuest = async () => {
+    if (isFirebaseConfigured && auth) {
+      await signOut(auth);
+      const result = await signInAnonymously(auth);
+      setUser({
+        type: 'anonymous',
+        id: result.user.uid,
+        displayName: 'Гость',
+        email: null,
+        firebaseUser: result.user
+      });
+    }
   };
 
   const login = async (email, password) => {
@@ -73,7 +86,6 @@ export function AuthProvider({ children }) {
       throw new Error('Firebase не настроен');
     }
     const result = await signInWithEmailAndPassword(auth, email, password);
-    localStorage.removeItem('cyberedu_guest_id');
     setUser({
       type: 'registered',
       id: result.user.uid,
@@ -88,9 +100,25 @@ export function AuthProvider({ children }) {
     if (!isFirebaseConfigured || !auth) {
       throw new Error('Firebase не настроен');
     }
+
+    // If currently anonymous, link the account to preserve progress
+    if (user?.type === 'anonymous' && user?.firebaseUser) {
+      const credential = EmailAuthProvider.credential(email, password);
+      const result = await linkWithCredential(user.firebaseUser, credential);
+      await updateProfile(result.user, { displayName });
+      setUser({
+        type: 'registered',
+        id: result.user.uid,
+        displayName,
+        email,
+        firebaseUser: result.user
+      });
+      return result;
+    }
+
+    // Otherwise create new account
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName });
-    localStorage.removeItem('cyberedu_guest_id');
     setUser({
       type: 'registered',
       id: result.user.uid,
@@ -102,22 +130,23 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    if (user?.type === 'registered' && isFirebaseConfigured && auth) {
+    if (isFirebaseConfigured && auth) {
       await signOut(auth);
+      // After signOut, onAuthStateChanged will trigger anonymous sign in
+    } else {
+      setUser({
+        type: 'anonymous',
+        id: 'no_firebase_' + Date.now(),
+        displayName: 'Гость'
+      });
     }
-    localStorage.removeItem('cyberedu_guest_id');
-    localStorage.removeItem('cyberedu_guest_name');
-    const newGuestId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('cyberedu_guest_id', newGuestId);
-    setUser({ type: 'guest', id: newGuestId, displayName: 'Гость' });
   };
 
   const updateDisplayName = async (newName) => {
-    if (user?.type === 'registered' && user?.firebaseUser) {
+    if (user?.firebaseUser) {
       await updateProfile(user.firebaseUser, { displayName: newName });
       setUser(prev => ({ ...prev, displayName: newName }));
-    } else if (user?.type === 'guest') {
-      localStorage.setItem('cyberedu_guest_name', newName);
+    } else {
       setUser(prev => ({ ...prev, displayName: newName }));
     }
   };
@@ -125,7 +154,7 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
-    isGuest: user?.type === 'guest',
+    isAnonymous: user?.type === 'anonymous',
     isRegistered: user?.type === 'registered',
     loginAsGuest,
     login,

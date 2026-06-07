@@ -2,15 +2,12 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BrowserWindow from './BrowserWindow';
 import VKInterface from './VKInterface';
-import SocialMediaQuiz from './SocialMediaQuiz';
 
 function SocialMediaSimulation({ simulation, onComplete }) {
   const [bootPhase, setBootPhase] = useState('black');
   const [browserOpen, setBrowserOpen] = useState(false);
   const [currentStage, setCurrentStage] = useState('profile-audit');
   const [isShuttingDown, setIsShuttingDown] = useState(false);
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
 
   // User choices
   const [privacySettings, setPrivacySettings] = useState({});
@@ -31,7 +28,8 @@ function SocialMediaSimulation({ simulation, onComplete }) {
 
   const handleShutdown = () => {
     setIsShuttingDown(true);
-    setTimeout(() => onComplete(), 2500);
+    const { total, max } = calculateScore();
+    setTimeout(() => onComplete({ stageScore: total, stageMax: max }), 2500);
   };
 
   const handleStageComplete = (stage, data) => {
@@ -49,7 +47,7 @@ function SocialMediaSimulation({ simulation, onComplete }) {
         setPhotoFindings(data);
         break;
       case 'hack-scenario':
-        setShowQuiz(true);
+        handleShutdown();
         return;
       default:
         break;
@@ -61,11 +59,6 @@ function SocialMediaSimulation({ simulation, onComplete }) {
     if (currentIndex < stages.length - 1) {
       setCurrentStage(stages[currentIndex + 1]);
     }
-  };
-
-  const handleQuizComplete = (score) => {
-    setQuizScore(score);
-    handleShutdown();
   };
 
   // Calculate total score
@@ -92,10 +85,6 @@ function SocialMediaSimulation({ simulation, onComplete }) {
     const photoCount = Object.values(photoFindings).filter(v => v).length;
     total += (photoCount / 4) * 25;
     max += 25;
-
-    // Quiz (20 points)
-    total += (quizScore / 4) * 20;
-    max += 20;
 
     return { total: Math.round(total), max };
   };
@@ -149,10 +138,7 @@ function SocialMediaSimulation({ simulation, onComplete }) {
                 <span>Анализ фото</span>
                 <span>{Math.round((Object.values(photoFindings).filter(v => v).length / 4) * 25)}/25</span>
               </div>
-              <div className="flex justify-between">
-                <span>Квиз</span>
-                <span>{Math.round((quizScore / 4) * 20)}/20</span>
-              </div>
+
             </div>
           </motion.div>
 
@@ -318,18 +304,14 @@ function SocialMediaSimulation({ simulation, onComplete }) {
                   className="absolute inset-4 z-10"
                 >
                   <BrowserWindow url="https://vk.com" onClose={() => setBrowserOpen(false)}>
-                    {showQuiz ? (
-                      <SocialMediaQuiz onComplete={handleQuizComplete} />
-                    ) : (
-                      <VKInterface
-                        currentStage={currentStage}
-                        onStageComplete={handleStageComplete}
-                        privacySettings={privacySettings}
-                        friendDecisions={friendDecisions}
-                        messageResponses={messageResponses}
-                        photoFindings={photoFindings}
-                      />
-                    )}
+                    <VKInterface
+                      currentStage={currentStage}
+                      onStageComplete={handleStageComplete}
+                      privacySettings={privacySettings}
+                      friendDecisions={friendDecisions}
+                      messageResponses={messageResponses}
+                      photoFindings={photoFindings}
+                    />
                   </BrowserWindow>
                 </motion.div>
               )}

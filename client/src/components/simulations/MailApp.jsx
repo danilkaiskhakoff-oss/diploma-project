@@ -9,6 +9,7 @@ function MailApp({ simulation, hintsEnabled, onClose, onComplete }) {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [userChoice, setUserChoice] = useState(null);
   const [analyzedEmails, setAnalyzedEmails] = useState([]);
+  const [correctCount, setCorrectCount] = useState(0);
   const [activeFolder, setActiveFolder] = useState('Входящие');
 
   const emails = simulation.emails;
@@ -28,6 +29,7 @@ function MailApp({ simulation, hintsEnabled, onClose, onComplete }) {
     
     // Dispatch threat update for ThreatMeter
     const isCorrect = (choice === 'phishing' && selectedEmail.isPhishing) || (choice === 'safe' && !selectedEmail.isPhishing);
+    if (isCorrect) setCorrectCount(prev => prev + 1);
     window.dispatchEvent(new CustomEvent('threatUpdate', { detail: { correct: isCorrect } }));
   };
 
@@ -38,7 +40,7 @@ function MailApp({ simulation, hintsEnabled, onClose, onComplete }) {
       setShowAnalysis(false);
       setUserChoice(null);
     } else {
-      onComplete();
+      onComplete({ stageScore: correctCount, stageMax: emails.length });
     }
   };
 

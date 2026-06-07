@@ -32,7 +32,7 @@ function PasswordSimulation({ simulation, onComplete }) {
   const handleShutdown = () => {
     setIsShuttingDown(true);
     setTimeout(() => {
-      onComplete();
+      onComplete({ stageScore: passwordStrength, stageMax: 100 });
     }, 2500);
   };
 
