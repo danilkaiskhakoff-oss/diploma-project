@@ -1,0 +1,1303 @@
+ПРИЛОЖЕНИЕ А
+ЛИСТИНГ ИСХОДНОГО КОДА ПРОГРАММЫ
+
+
+// ============================================================
+// Файл: client/src/firebase/config.js
+// Описание: Конфигурация Firebase (Auth, Firestore)
+// ============================================================
+
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
+};
+
+const isFirebaseConfigured = !!(
+  firebaseConfig.apiKey &&
+  firebaseConfig.projectId
+);
+
+let app, db, auth;
+
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+  } catch (error) {
+    console.warn('Firebase initialization failed:', error);
+  }
+}
+
+export { db, auth, app, isFirebaseConfigured };
+export default app;
+
+
+// ============================================================
+// Файл: client/src/App.jsx
+// Описание: Корневой компонент приложения, маршрутизация,
+//           проверка прав администратора
+// ============================================================
+
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, isFirebaseConfigured } from './firebase/config';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LevelSelect from './components/LevelSelect';
+import AuthModal from './components/AuthModal';
+
+const Map3D = lazy(() => import('./components/Map3D'));
+const AdminPanel = lazy(() => import('./components/admin/AdminPanel'));
+const ProfilePage = lazy(() => import('./components/ProfilePage'));
+
+function AppContent() {
+  const { user, isRegistered } = useAuth();
+  const [selectedLevel, setSelectedLevel] = useState(null);
+  const [isAdminRoute, setIsAdminRoute] = useState(false);
+  const [isProfileRoute, setIsProfileRoute] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState('login');
+
+  useEffect(() => {
+    const checkRoute = () => {
+      const path = window.location.pathname;
+      setIsAdminRoute(path === '/admin');
+      setIsProfileRoute(path === '/profile');
+    };
+
+    checkRoute();
+    window.addEventListener('popstate', checkRoute);
+
+    if (isFirebaseConfigured && auth) {
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        let admin = false;
+        if (firebaseUser && !firebaseUser.isAnonymous) {
+          const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+          if (firebaseUser.email === adminEmail) {
+            admin = true;
+          } else {
+            try {
+              const token = await firebaseUser.getIdTokenResult();
+              admin = token.claims.admin === true;
+            } catch (e) {
+              // fallback to email check only
+            }
+          }
+        }
+        setIsAdmin(admin);
+        setChecking(false);
+      });
+      return () => { unsubscribe(); window.removeEventListener('popstate', checkRoute); };
+    } else {
+      setChecking(false);
+    }
+  }, []);
+
+  const handleReset = () => {
+    setSelectedLevel(null);
+    window.history.pushState({}, '', '/');
+  };
+
+  const handleNavigate = (path) => {
+    window.history.pushState({}, '', path);
+    setIsAdminRoute(path === '/admin');
+    setIsProfileRoute(path === '/profile');
+  };
+
+  const handleOpenAuth = (tab = 'login') => {
+    setAuthModalTab(tab);
+    setShowAuthModal(true);
+  };
+
+  const fallback = (
+    <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <div className="text-gray-400">Загрузка...</div>
+    </div>
+  );
+
+  if (isAdminRoute) {
+    if (checking) return fallback;
+    return (
+      <Suspense fallback={fallback}>
+        <AdminPanel isLoggedIn={isAdmin} />
+        <AuthModal key={authModalTab} isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+      </Suspense>
+    );
+  }
+
+  if (isProfileRoute) {
+    if (!isRegistered) {
+      window.history.pushState({}, '', '/');
+      return <LevelSelect onSelectLevel={setSelectedLevel}
+        onOpenAuth={handleOpenAuth} onNavigate={handleNavigate} user={user} />;
+    }
+    return (
+      <Suspense fallback={fallback}>
+        <ProfilePage />
+        <AuthModal key={authModalTab} isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+      </Suspense>
+    );
+  }
+
+  if (!selectedLevel) {
+    return (
+      <>
+        <LevelSelect onSelectLevel={setSelectedLevel}
+          onOpenAuth={handleOpenAuth} onNavigate={handleNavigate} user={user} />
+        <AuthModal key={authModalTab} isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+      </>
+    );
+  }
+
+  return (
+    <Suspense fallback={fallback}>
+      <Map3D level={selectedLevel} onReset={handleReset}
+        user={user} onOpenAuth={handleOpenAuth} />
+      <AuthModal isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+    </Suspense>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+export default App;
+
+
+// ============================================================
+// Файл: client/src/context/AuthContext.jsx
+// Описание: Контекст аутентификации — логин, регистрация,
+//           сброс пароля, верификация email
+// ============================================================
+
+import { createContext, useContext, useState, useEffect } from 'react';
+import { auth, isFirebaseConfigured } from '../firebase/config';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  onAuthStateChanged,
+  signInAnonymously,
+  linkWithCredential,
+  EmailAuthProvider,
+  sendEmailVerification,
+  sendPasswordResetEmail
+} from 'firebase/auth';
+
+const AuthContext = createContext(null);
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !auth) {
+      setUser({
+        type: 'anonymous',
+        id: 'no_firebase_' + Date.now(),
+        displayName: 'Гость'
+      });
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({
+          type: firebaseUser.isAnonymous ? 'anonymous' : 'registered',
+          id: firebaseUser.uid,
+          displayName: firebaseUser.displayName ||
+            (firebaseUser.isAnonymous ? 'Гость' : 'Пользователь'),
+          email: firebaseUser.email || null,
+          emailVerified: firebaseUser.emailVerified || false,
+          firebaseUser
+        });
+      } else {
+        try {
+          const result = await signInAnonymously(auth);
+          setUser({
+            type: 'anonymous',
+            id: result.user.uid,
+            displayName: 'Гость',
+            email: null,
+            firebaseUser: result.user
+          });
+        } catch (error) {
+          console.error('Anonymous sign in failed:', error);
+          setUser({
+            type: 'anonymous',
+            id: 'fallback_' + Date.now(),
+            displayName: 'Гость'
+          });
+        }
+      }
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const loginAsGuest = async () => {
+    if (isFirebaseConfigured && auth) {
+      await signOut(auth);
+    }
+  };
+
+  const login = async (email, password) => {
+    if (!isFirebaseConfigured || !auth) {
+      throw new Error('Firebase не настроен');
+    }
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    setUser({
+      type: 'registered',
+      id: result.user.uid,
+      displayName: result.user.displayName || 'Пользователь',
+      email: result.user.email,
+      firebaseUser: result.user
+    });
+    return result;
+  };
+
+  const register = async (displayName, email, password) => {
+    if (!isFirebaseConfigured || !auth) {
+      throw new Error('Firebase не настроен');
+    }
+
+    if (user?.type === 'anonymous' && user?.firebaseUser) {
+      const credential = EmailAuthProvider.credential(email, password);
+      const result = await linkWithCredential(user.firebaseUser, credential);
+      await updateProfile(result.user, { displayName });
+      setUser({
+        type: 'registered',
+        id: result.user.uid,
+        displayName,
+        email,
+        firebaseUser: result.user
+      });
+      return result;
+    }
+
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(result.user, { displayName });
+    setUser({
+      type: 'registered',
+      id: result.user.uid,
+      displayName,
+      email,
+      firebaseUser: result.user
+    });
+    return result;
+  };
+
+  const logout = async () => {
+    if (isFirebaseConfigured && auth) {
+      await signOut(auth);
+    } else {
+      setUser({
+        type: 'anonymous',
+        id: 'no_firebase_' + Date.now(),
+        displayName: 'Гость'
+      });
+    }
+  };
+
+  const updateDisplayName = async (newName) => {
+    if (!user) return;
+    if (user.firebaseUser) {
+      await updateProfile(user.firebaseUser, { displayName: newName });
+    }
+    setUser(prev => (prev ? { ...prev, displayName: newName } : prev));
+  };
+
+  const resendVerification = async () => {
+    if (!user?.firebaseUser) throw new Error('Пользователь не авторизован');
+    if (user.emailVerified) throw new Error('Email уже подтверждён');
+    await sendEmailVerification(user.firebaseUser);
+  };
+
+  const resetPassword = async (email) => {
+    if (!isFirebaseConfigured || !auth) throw new Error('Firebase не настроен');
+    await sendPasswordResetEmail(auth, email);
+  };
+
+  const value = {
+    user,
+    loading,
+    isAnonymous: user?.type === 'anonymous',
+    isRegistered: user?.type === 'registered',
+    emailVerified: user?.emailVerified || false,
+    loginAsGuest,
+    login,
+    register,
+    logout,
+    updateDisplayName,
+    resendVerification,
+    resetPassword
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
+}
+
+
+// ============================================================
+// Файл: client/src/components/AuthModal.jsx
+// Описание: Модальное окно входа/регистрации,
+//           кнопка «Забыли пароль?», форма сброса пароля
+// ============================================================
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+
+function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
+  const { login, register, resetPassword } = useAuth();
+  const [tab, setTab] = useState(initialTab);
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (tab === 'register') {
+      if (!displayName.trim()) { setError('Введите имя'); return; }
+      if (password !== confirmPassword) { setError('Пароли не совпадают'); return; }
+      if (password.length < 6) { setError('Пароль должен быть не менее 6 символов'); return; }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) { setError('Введите корректный email'); return; }
+    }
+
+    setLoading(true);
+    try {
+      if (tab === 'login') {
+        await login(email, password);
+      } else {
+        await register(displayName, email, password);
+        setSuccess('На вашу почту отправлено письмо для подтверждения email');
+      }
+      onClose();
+    } catch (err) {
+      if (err.code === 'auth/email-already-in-use') setError('Этот email уже зарегистрирован');
+      else if (err.code === 'auth/user-not-found') setError('Пользователь не найден');
+      else if (err.code === 'auth/wrong-password') setError('Неверный пароль');
+      else if (err.code === 'auth/invalid-email') setError('Неверный формат email');
+      else if (err.code === 'auth/weak-password') setError('Пароль слишком слабый');
+      else setError(err.message || 'Ошибка. Попробуйте ещё раз.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) { setError('Введите корректный email'); return; }
+    setLoading(true);
+    try {
+      await resetPassword(resetEmail);
+      setSuccess('Ссылка для сброса пароля отправлена на ' + resetEmail);
+      setResetEmail('');
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') setError('Пользователь с таким email не найден');
+      else if (err.code === 'auth/invalid-email') setError('Неверный формат email');
+      else setError(err.message || 'Ошибка. Попробуйте ещё раз.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (showReset) {
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={onClose}>
+            <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 30 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl relative">
+              <button onClick={onClose}
+                className="absolute top-4 right-4 text-gray-500 hover:text-white text-xl">✕</button>
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className="text-4xl mb-3">🔐</div>
+                  <h2 className="text-xl font-bold text-white">Сброс пароля</h2>
+                  <p className="text-gray-400 text-sm mt-1">
+                    Введите email, и мы отправим ссылку для сброса пароля
+                  </p>
+                </div>
+                {error && (
+                  <div className="bg-red-900/30 border border-red-800 text-red-300 p-3 rounded-lg mb-4 text-sm">
+                    {error}
+                  </div>
+                )}
+                {success && (
+                  <div className="bg-green-900/30 border border-green-800 text-green-300 p-3 rounded-lg mb-4 text-sm">
+                    {success}
+                  </div>
+                )}
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-gray-400 text-sm mb-1.5">Email</label>
+                    <input type="email" value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-[#00ff88] focus:outline-none"
+                      required />
+                  </div>
+                  <button type="submit" disabled={loading}
+                    className="w-full py-3 bg-[#00ff88] text-gray-900 font-bold rounded-lg hover:bg-[#00cc6a] transition disabled:opacity-50">
+                    {loading ? 'Отправка...' : 'Отправить ссылку'}
+                  </button>
+                </form>
+                <p className="text-gray-500 text-xs text-center mt-4">
+                  <button onClick={() => { setShowReset(false); setError(''); setSuccess(''); }}
+                    className="text-[#00ff88] hover:underline">
+                    ← Вернуться ко входу
+                  </button>
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={onClose}>
+          <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.9, y: 30 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl relative">
+            <div className="flex border-b border-gray-800">
+              <button onClick={() => { setTab('login'); setError(''); setSuccess(''); }}
+                className={`flex-1 py-4 text-center font-medium transition ${
+                  tab === 'login' ? 'text-white border-b-2 border-[#00ff88] bg-gray-800/50' : 'text-gray-500 hover:text-gray-300'
+                }`}>Вход</button>
+              <button onClick={() => { setTab('register'); setError(''); setSuccess(''); }}
+                className={`flex-1 py-4 text-center font-medium transition ${
+                  tab === 'register' ? 'text-white border-b-2 border-[#00ff88] bg-gray-800/50' : 'text-gray-500 hover:text-gray-300'
+                }`}>Регистрация</button>
+            </div>
+            <button onClick={onClose}
+              className="absolute top-4 right-4 text-gray-500 hover:text-white text-xl">✕</button>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="text-4xl mb-3">{tab === 'login' ? '🔑' : ''}</div>
+                <h2 className="text-xl font-bold text-white">
+                  {tab === 'login' ? 'Вход в аккаунт' : 'Создать аккаунт'}
+                </h2>
+                <p className="text-gray-400 text-sm mt-1">
+                  {tab === 'login' ? 'Войдите для сохранения прогресса' : 'Зарегистрируйтесь, чтобы сохранять результаты'}
+                </p>
+              </div>
+              {error && (
+                <div className="bg-red-900/30 border border-red-800 text-red-300 p-3 rounded-lg mb-4 text-sm">{error}</div>
+              )}
+              {success && (
+                <div className="bg-green-900/30 border border-green-800 text-green-300 p-3 rounded-lg mb-4 text-sm">{success}</div>
+              )}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {tab === 'register' && (
+                  <div>
+                    <label className="block text-gray-400 text-sm mb-1.5">Имя</label>
+                    <input type="text" value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder="Ваше имя"
+                      className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-[#00ff88] focus:outline-none"
+                      required />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-gray-400 text-sm mb-1.5">Email</label>
+                  <input type="email" value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="email@example.com"
+                    className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-[#00ff88] focus:outline-none"
+                    required />
+                </div>
+                <div>
+                  <label className="block text-gray-400 text-sm mb-1.5">Пароль</label>
+                  <input type="password" value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Минимум 6 символов"
+                    className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-[#00ff88] focus:outline-none"
+                    required />
+                </div>
+                {tab === 'register' && (
+                  <div>
+                    <label className="block text-gray-400 text-sm mb-1.5">Подтвердите пароль</label>
+                    <input type="password" value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Повторите пароль"
+                      className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-[#00ff88] focus:outline-none"
+                      required />
+                  </div>
+                )}
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 bg-[#00ff88] text-gray-900 font-bold rounded-lg hover:bg-[#00cc6a] transition disabled:opacity-50">
+                  {loading ? (tab === 'login' ? 'Вход...' : 'Регистрация...') : (tab === 'login' ? 'Войти' : 'Зарегистрироваться')}
+                </button>
+              </form>
+              {tab === 'login' && (
+                <p className="text-gray-500 text-xs text-center mt-3">
+                  <button onClick={() => { setShowReset(true); setError(''); setSuccess(''); }}
+                    className="text-[#00ff88] hover:underline">
+                    Забыли пароль?
+                  </button>
+                </p>
+              )}
+              <p className="text-gray-500 text-xs text-center mt-4">
+                {tab === 'login' ? (
+                  <>Нет аккаунта? <button onClick={() => setTab('register')} className="text-[#00ff88] hover:underline">Зарегистрируйтесь</button></>
+                ) : (
+                  <>Уже есть аккаунт? <button onClick={() => setTab('login')} className="text-[#00ff88] hover:underline">Войдите</button></>
+                )}
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export default AuthModal;
+
+
+// ============================================================
+// Файл: client/src/components/Map3D.jsx
+// Описание: 3D-карта уровней с интерактивными чекпоинтами,
+//           загрузка прогресса, обработка кликов
+// ============================================================
+
+import { useState, useRef, Suspense, useEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, Stars, Html } from '@react-three/drei';
+import { motion, AnimatePresence } from 'framer-motion';
+import CheckpointScene from './CheckpointScene';
+import WarningModal from './WarningModal';
+import { getProgress, getCompletedCheckpoints, saveProgress } from '../services/ProgressService';
+
+function CheckpointNode({ checkpoint, position, color, onClick, progressData }) {
+  const meshRef = useRef();
+  const [hovered, setHovered] = useState(false);
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += 0.01;
+      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.2;
+    }
+  });
+
+  const isCompleted = progressData?.completed;
+  const scoreLabel = isCompleted && progressData?.totalScore !== undefined
+    ? ` ${progressData.totalScore}/${progressData.totalPossible}` : '';
+  const labelColor = isCompleted
+    ? (progressData.totalScore === progressData.totalPossible ? '#00ff88' : '#ffaa00')
+    : color;
+
+  return (
+    <group position={position}>
+      <mesh ref={meshRef} onClick={onClick}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}>
+        <icosahedronGeometry args={[0.6, 0]} />
+        <meshStandardMaterial
+          color={hovered ? '#ffffff' : color}
+          emissive={color}
+          emissiveIntensity={hovered ? 0.8 : 0.3}
+          wireframe={!isCompleted}
+        />
+      </mesh>
+      <mesh>
+        <icosahedronGeometry args={[0.9, 0]} />
+        <meshBasicMaterial color={color} transparent opacity={0.08} wireframe />
+      </mesh>
+      <Html position={[0, 1.2, 0]} center distanceFactor={10}>
+        <div className="text-xs font-bold px-2 py-1 rounded whitespace-nowrap"
+          style={{
+            color: labelColor,
+            textShadow: '0 0 10px rgba(0,0,0,0.9)',
+            backgroundColor: 'rgba(10,10,15,0.7)',
+            backdropFilter: 'blur(4px)',
+            pointerEvents: 'none',
+          }}>
+          {isCompleted ? '✓ ' : ''}{checkpoint.title}{scoreLabel}
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+function Scene({ level, onCheckpointClick, progress }) {
+  return (
+    <>
+      <ambientLight intensity={0.3} />
+      <pointLight position={[10, 10, 10]} intensity={1.5} />
+      <pointLight position={[-10, -10, -10]} intensity={0.5} color={level.color} />
+      <pointLight position={[0, 0, 0]} intensity={0.3} />
+      <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
+      {level.checkpoints.map((checkpoint, index) => {
+        const angle = (index / level.checkpoints.length) * Math.PI * 2;
+        const radius = 6;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const y = Math.sin(angle * 2) * 1.5;
+        const cpProgress = progress?.[checkpoint.id];
+        return (
+          <CheckpointNode
+            key={checkpoint.id}
+            checkpoint={checkpoint}
+            position={[x, y, z]}
+            color={level.color}
+            onClick={() => onCheckpointClick(checkpoint)}
+            progressData={cpProgress}
+          />
+        );
+      })}
+      <OrbitControls enablePan={false} minDistance={5} maxDistance={25}
+        autoRotate autoRotateSpeed={0.3} />
+    </>
+  );
+}
+
+function Map3D({ level, onReset, user, onOpenAuth }) {
+  const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
+  const [progress, setProgress] = useState({});
+  const [completedCheckpoints, setCompletedCheckpoints] = useState([]);
+  const [showWarning, setShowWarning] = useState(false);
+  const [pendingCheckpoint, setPendingCheckpoint] = useState(null);
+
+  const isAnonymous = user?.type === 'anonymous';
+
+  useEffect(() => {
+    if (user) { loadProgress(); }
+  }, [user, level]);
+
+  const loadProgress = async () => {
+    if (!user) return;
+    const prog = await getProgress(user.id, user.type === 'registered');
+    setProgress(prog);
+    const completed = getCompletedCheckpoints(prog, level.id);
+    setCompletedCheckpoints(completed);
+  };
+
+  const handleCheckpointClick = (checkpoint) => {
+    if (isAnonymous) {
+      setPendingCheckpoint(checkpoint);
+      setShowWarning(true);
+    } else {
+      setSelectedCheckpoint(checkpoint);
+    }
+  };
+
+  const handleContinueAsGuest = () => {
+    setShowWarning(false);
+    if (pendingCheckpoint) {
+      setSelectedCheckpoint(pendingCheckpoint);
+      setPendingCheckpoint(null);
+    }
+  };
+
+  const handleRegisterFromWarning = () => {
+    setShowWarning(false);
+    setPendingCheckpoint(null);
+    onOpenAuth('register');
+  };
+
+  const handleComplete = async (data) => {
+    if (selectedCheckpoint) {
+      setCompletedCheckpoints(prev =>
+        prev.includes(selectedCheckpoint.id) ? prev : [...prev, selectedCheckpoint.id]);
+    }
+    if (user && selectedCheckpoint && data) {
+      await saveProgress(user.id, user.type === 'registered',
+        level.id, selectedCheckpoint.id, data);
+      await loadProgress();
+    }
+    setSelectedCheckpoint(null);
+  };
+
+  const isSimulation = selectedCheckpoint?.type === 'simulation';
+
+  return (
+    <div className="relative w-screen h-screen bg-[#0a0a0f] overflow-hidden">
+      {!isSimulation && (
+        <Canvas camera={{ position: [0, 4, 14], fov: 60 }} gl={{ antialias: true }}>
+          <color attach="background" args={['#0a0a0f']} />
+          <fog attach="fog" args={['#0a0a0f', 20, 50]} />
+          <Suspense fallback={null}>
+            <Scene level={level} onCheckpointClick={handleCheckpointClick}
+              progress={progress[level.id] || {}} />
+          </Suspense>
+        </Canvas>
+      )}
+
+      {!isSimulation && (
+        <>
+          <div className="absolute top-4 left-4 z-10">
+            <button onClick={onReset}
+              className="px-4 py-2 bg-[#1a1a2e] border border-gray-700 rounded-lg text-gray-300 hover:text-white hover:border-[#00ff88] transition text-sm">
+              ← Назад к уровням
+            </button>
+          </div>
+          <div className="absolute top-4 right-4 z-10 bg-[#1a1a2e]/80 backdrop-blur px-4 py-2 rounded-lg border border-gray-800">
+            <h2 className="text-lg font-bold" style={{ color: level.color }}>{level.name}</h2>
+            <p className="text-xs text-gray-400">{completedCheckpoints.length}/{level.checkpoints.length} пройдено</p>
+          </div>
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 bg-[#1a1a2e]/60 backdrop-blur px-4 py-2 rounded-lg border border-gray-800 text-center">
+            <p className="text-xs text-gray-400">Вращайте камеру • Нажмите на точку</p>
+          </div>
+        </>
+      )}
+
+      <AnimatePresence>
+        {selectedCheckpoint && (
+          <CheckpointScene
+            checkpoint={{ ...selectedCheckpoint, _levelId: level.id }}
+            levelColor={level.color}
+            onClose={handleComplete}
+            user={user}
+          />
+        )}
+      </AnimatePresence>
+
+      <WarningModal isOpen={showWarning}
+        onClose={() => { setShowWarning(false); setPendingCheckpoint(null); }}
+        onContinue={handleContinueAsGuest}
+        onRegister={handleRegisterFromWarning} />
+    </div>
+  );
+}
+
+export default Map3D;
+
+
+// ============================================================
+// Файл: client/src/services/ProgressService.js
+// Описание: Сервис прогресса — сохранение, загрузка,
+//           сброс прогресса, расчёт статистики и достижений
+// ============================================================
+
+import { db, isFirebaseConfigured } from '../firebase/config';
+import {
+  doc, setDoc, getDoc, updateDoc, serverTimestamp
+} from 'firebase/firestore';
+import { levels } from '../data/levels';
+
+export async function saveProgress(userId, isRegistered, levelId, checkpointId, data) {
+  const progressData = {
+    completed: true,
+    stageScore: data.stageScore || 0,
+    stageMax: data.stageMax || 0,
+    quizScore: data.quizScore || 0,
+    quizTotal: data.quizTotal || 0,
+    totalScore: (data.stageScore || 0) + (data.quizScore || 0),
+    totalPossible: (data.stageMax || 0) + (data.quizTotal || 0),
+    completedAt: serverTimestamp()
+  };
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const progress = userData.progress || {};
+        progress[levelId] = progress[levelId] || {};
+        const existing = progress[levelId][checkpointId];
+
+        if (existing && existing.bestScore !== undefined) {
+          progressData.bestScore = Math.max(existing.bestScore, progressData.totalScore);
+          progressData.bestTotal = Math.max(existing.bestTotal || progressData.totalPossible, progressData.totalPossible);
+          progressData.attempts = (existing.attempts || 1) + 1;
+        } else {
+          progressData.bestScore = progressData.totalScore;
+          progressData.bestTotal = progressData.totalPossible;
+          progressData.attempts = 1;
+        }
+
+        progress[levelId][checkpointId] = progressData;
+        await updateDoc(userRef, { progress });
+      } else {
+        progressData.bestScore = progressData.totalScore;
+        progressData.bestTotal = progressData.totalPossible;
+        progressData.attempts = 1;
+        await setDoc(userRef, {
+          progress: { [levelId]: { [checkpointId]: progressData } },
+          createdAt: serverTimestamp()
+        }, { merge: true });
+      }
+    } catch (error) {
+      console.error('Error saving progress to Firestore:', error);
+    }
+  }
+}
+
+export async function getProgress(userId, isRegistered) {
+  if (isFirebaseConfigured && db) {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        return userSnap.data().progress || {};
+      }
+    } catch (error) {
+      console.error('Error loading progress from Firestore:', error);
+    }
+    return {};
+  }
+  return {};
+}
+
+export async function resetProgress(userId, isRegistered) {
+  if (isFirebaseConfigured && db) {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        await updateDoc(userRef, { progress: {} });
+      } else {
+        await setDoc(userRef, { progress: {} }, { merge: true });
+      }
+    } catch (error) {
+      console.error('Error resetting progress:', error);
+    }
+  }
+}
+
+export function getCompletedCheckpoints(progress, levelId) {
+  const levelProgress = progress?.[levelId] || {};
+  return Object.entries(levelProgress)
+    .filter(([, data]) => data.completed)
+    .map(([id]) => id);
+}
+
+export function calculateStats(progress) {
+  let totalCheckpoints = 0;
+  let completedCheckpoints = 0;
+  let totalScore = 0;
+  let totalPossible = 0;
+  const levelStats = {};
+  const details = [];
+
+  Object.entries(levels).forEach(([levelId, level]) => {
+    const levelProgress = progress?.[levelId] || {};
+    const levelCheckpoints = level.checkpoints.length;
+    let levelCompleted = 0;
+    let levelScore = 0;
+    let levelPossible = 0;
+
+    level.checkpoints.forEach(cp => {
+      const cpData = levelProgress[cp.id];
+      totalCheckpoints++;
+      if (cpData && cpData.completed) {
+        completedCheckpoints++;
+        levelCompleted++;
+        totalScore += cpData.totalScore || 0;
+        totalPossible += cpData.totalPossible || 0;
+        levelScore += cpData.totalScore || 0;
+        levelPossible += cpData.totalPossible || 0;
+        details.push({
+          checkpointId: cp.id, title: cp.title, levelId,
+          levelName: level.name, levelColor: level.color,
+          completed: true, score: cpData.totalScore || 0,
+          total: cpData.totalPossible || 0,
+          bestScore: cpData.bestScore || cpData.totalScore || 0,
+          bestTotal: cpData.bestTotal || cpData.totalPossible || 0,
+          attempts: cpData.attempts || 1, completedAt: cpData.completedAt
+        });
+      } else {
+        const quizLen = cp.quiz?.length || 0;
+        details.push({
+          checkpointId: cp.id, title: cp.title, levelId,
+          levelName: level.name, levelColor: level.color,
+          completed: false, score: 0, total: quizLen,
+          bestScore: 0, bestTotal: quizLen,
+          attempts: 0, completedAt: null
+        });
+      }
+    });
+
+    levelStats[levelId] = {
+      name: level.name, color: level.color,
+      completed: levelCompleted, total: levelCheckpoints,
+      percentage: levelCheckpoints > 0 ? Math.round((levelCompleted / levelCheckpoints) * 100) : 0,
+      score: levelScore, possible: levelPossible
+    };
+  });
+
+  const overallPercentage = totalCheckpoints > 0 ? Math.round((completedCheckpoints / totalCheckpoints) * 100) : 0;
+  const averageScore = totalPossible > 0 ? totalScore + '/' + totalPossible : '0/0';
+
+  return { totalCheckpoints, completedCheckpoints, overallPercentage, averageScore, levelStats, details };
+}
+
+export function getAchievements(progress) {
+  const stats = calculateStats(progress);
+  const achievements = [];
+
+  const allLevels = Object.values(stats.levelStats);
+  const anyCompleted = stats.completedCheckpoints > 0;
+  const perfectScore = stats.details.some(d => d.completed && d.score === d.total && d.total > 0);
+  const intermediateComplete = allLevels.find(l => l.name === 'Средний')?.percentage === 100;
+  const advancedComplete = allLevels.find(l => l.name === 'Продвинутый')?.percentage === 100;
+
+  const allSimulations = stats.details.filter(d => {
+    const level = levels[d.levelId];
+    const cp = level?.checkpoints.find(c => c.id === d.checkpointId);
+    return cp?.type === 'simulation';
+  });
+  const allBriefings = stats.details.filter(d => {
+    const level = levels[d.levelId];
+    if (!level) return false;
+    const cp = level.checkpoints.find(c => c.id === d.checkpointId);
+    return cp?.simulation?.briefing || cp?.type === 'briefing';
+  });
+
+  const allSimulationsCompleted = allSimulations.length > 0 && allSimulations.every(d => d.completed);
+  const allBriefingsCompleted = allBriefings.length > 0 && allBriefings.every(d => d.completed);
+
+  if (anyCompleted) {
+    achievements.push({ id: 'first-step', icon: '🏆', title: 'Первый шаг', description: 'Пройден первый чекпоинт', unlocked: true });
+  } else {
+    achievements.push({ id: 'first-step', icon: '🏆', title: 'Первый шаг', description: 'Пройден первый чекпоинт', unlocked: false });
+  }
+
+  if (perfectScore) {
+    achievements.push({ id: 'sniper', icon: '🎯', title: 'Снайпер', description: '100% за чекпоинт', unlocked: true });
+  } else {
+    achievements.push({ id: 'sniper', icon: '🎯', title: 'Снайпер', description: '100% за чекпоинт', unlocked: false });
+  }
+
+  if (intermediateComplete) {
+    achievements.push({ id: 'on-fire', icon: '🔥', title: 'На огне', description: 'Пройден весь Intermediate', unlocked: true });
+  } else {
+    achievements.push({ id: 'on-fire', icon: '🔥', title: 'На огне', description: 'Пройден весь Intermediate', unlocked: false });
+  }
+
+  if (advancedComplete) {
+    achievements.push({ id: 'hacker', icon: '💀', title: 'Хакер', description: 'Пройден весь Advanced', unlocked: true });
+  } else {
+    achievements.push({ id: 'hacker', icon: '💀', title: 'Хакер', description: 'Пройден весь Advanced', unlocked: false });
+  }
+
+  if (allBriefingsCompleted) {
+    achievements.push({ id: 'theorist', icon: '📚', title: 'Теоретик', description: 'Все брифинги прочитаны', unlocked: true });
+  } else {
+    achievements.push({ id: 'theorist', icon: '', title: 'Теоретик', description: 'Все брифинги прочитаны', unlocked: false });
+  }
+
+  if (allSimulationsCompleted) {
+    achievements.push({ id: 'defender', icon: '🛡️', title: 'Защитник', description: 'Все симуляции пройдены', unlocked: true });
+  } else {
+    achievements.push({ id: 'defender', icon: '🛡️', title: 'Защитник', description: 'Все симуляции пройдены', unlocked: false });
+  }
+
+  return achievements;
+}
+
+
+// ============================================================
+// Файл: client/src/components/admin/AdminPanel.jsx
+// Описание: Административная панель — навигация,
+//           lazy-загрузка компонентов, проверка авторизации
+// ============================================================
+
+import { useState, lazy, Suspense } from 'react';
+import { signOut } from 'firebase/auth';
+import { auth, isFirebaseConfigured } from '../../firebase/config';
+import AdminLogin from './AdminLogin';
+import AdminSidebar from './AdminSidebar';
+
+const AdminDashboard = lazy(() => import('./AdminDashboard'));
+const QuizList = lazy(() => import('./quizzes/QuizList'));
+const QuizEditor = lazy(() => import('./quizzes/QuizEditor'));
+const ThemeEditor = lazy(() => import('./ui-config/ThemeEditor'));
+const LevelList = lazy(() => import('./levels/LevelList'));
+const LevelEditor = lazy(() => import('./levels/LevelEditor'));
+const BriefingList = lazy(() => import('./briefings/BriefingList'));
+const BriefingEditor = lazy(() => import('./briefings/BriefingEditor'));
+const SimulationList = lazy(() => import('./simulations/SimulationList'));
+const UserList = lazy(() => import('./users/UserList'));
+
+function SectionFallback() {
+  return (
+    <div className="flex items-center justify-center h-64 text-gray-400 text-lg">
+      Загрузка...
+    </div>
+  );
+}
+
+function AdminPanel({ isLoggedIn }) {
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [selectedLevel, setSelectedLevel] = useState(null);
+  const [selectedBriefing, setSelectedBriefing] = useState(null);
+
+  const handleLogout = async () => {
+    try {
+      if (auth) { await signOut(auth); }
+      window.location.reload();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const handleSelectQuiz = (quizId) => {
+    setSelectedQuiz(quizId);
+    setActiveSection('quiz-editor');
+  };
+
+  const handleBackToQuizzes = () => {
+    setSelectedQuiz(null);
+    setActiveSection('quizzes');
+  };
+
+  const handleSelectLevel = (levelId) => {
+    setSelectedLevel(levelId);
+    setActiveSection('level-editor');
+  };
+
+  const handleBackToLevels = () => {
+    setSelectedLevel(null);
+    setActiveSection('levels');
+  };
+
+  const handleSelectBriefing = (briefingId) => {
+    setSelectedBriefing(briefingId);
+    setActiveSection('briefing-editor');
+  };
+
+  const handleBackToBriefings = () => {
+    setSelectedBriefing(null);
+    setActiveSection('briefings');
+  };
+
+  const handleNavigateToLevelFromSim = (levelId) => {
+    setSelectedLevel(levelId);
+    setActiveSection('level-editor');
+  };
+
+  if (!isLoggedIn) {
+    return <AdminLogin onLogin={() => window.location.reload()} />;
+  }
+
+  if (!isFirebaseConfigured) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-950">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-white mb-4">Firebase не настроен</h2>
+          <p className="text-gray-400 mb-6">
+            Для работы админ-панели необходимо настроить Firebase.<br/>
+            См. инструкцию в ADMIN_SETUP.md
+          </p>
+          <a href="/" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            Вернуться на сайт
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const renderContent = () => {
+    const section = (() => {
+      switch (activeSection) {
+        case 'dashboard': return <AdminDashboard onNavigate={(section) => setActiveSection(section)} />;
+        case 'quizzes': return <QuizList onSelectQuiz={handleSelectQuiz} />;
+        case 'quiz-editor': return <QuizEditor quizId={selectedQuiz} onBack={handleBackToQuizzes} />;
+        case 'ui-config': return <ThemeEditor />;
+        case 'levels': return <LevelList onSelectLevel={handleSelectLevel} />;
+        case 'level-editor': return <LevelEditor levelId={selectedLevel} onBack={handleBackToLevels} />;
+        case 'briefings': return <BriefingList onSelectBriefing={handleSelectBriefing} />;
+        case 'briefing-editor': return <BriefingEditor briefingId={selectedBriefing} onBack={handleBackToBriefings} />;
+        case 'simulations': return <SimulationList onNavigateToLevel={handleNavigateToLevelFromSim} />;
+        case 'users': return <UserList />;
+        default: return <AdminDashboard />;
+      }
+    })();
+    return <Suspense fallback={<SectionFallback />}>{section}</Suspense>;
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-950">
+      <AdminSidebar
+        activeSection={
+          activeSection === 'quiz-editor' ? 'quizzes'
+          : activeSection === 'level-editor' ? 'levels'
+          : activeSection === 'briefing-editor' ? 'briefings'
+          : activeSection
+        }
+        onNavigate={(section) => {
+          setActiveSection(section);
+          setSelectedQuiz(null);
+          setSelectedLevel(null);
+          setSelectedBriefing(null);
+        }}
+        onLogout={handleLogout}
+      />
+      <div className="flex-1 overflow-y-auto">
+        {renderContent()}
+      </div>
+    </div>
+  );
+}
+
+export default AdminPanel;
+
+
+// ============================================================
+// Файл: client/src/components/admin/users/UserList.jsx
+// Описание: Управление пользователями — сброс пароля
+//           через отправку email-уведомления
+// ============================================================
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../../../firebase/config';
+
+function UserList() {
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setMessage('');
+    setError('');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Введите корректный email');
+      return;
+    }
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setMessage('Ссылка для сброса пароля отправлена на ' + email);
+      setEmail('');
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') {
+        setError('Пользователь с таким email не найден');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Неверный формат email');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Слишком много запросов. Попробуйте позже');
+      } else {
+        setError(err.message || 'Ошибка при отправке');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-white mb-2">Управление пользователями</h1>
+        <p className="text-gray-400 text-sm">
+          Администратор может инициировать сброс пароля пользователя через отправку email-уведомления.
+          Пользователь получит письмо со ссылкой для самостоятельной установки нового пароля.
+        </p>
+      </div>
+
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 max-w-lg">
+        <h2 className="text-lg font-semibold text-white mb-4">Сброс пароля пользователя</h2>
+
+        {error && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-red-900/30 border border-red-800 text-red-300 p-3 rounded-lg mb-4 text-sm">
+            {error}
+          </motion.div>
+        )}
+
+        {message && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-green-900/30 border border-green-800 text-green-300 p-3 rounded-lg mb-4 text-sm">
+            {message}
+          </motion.div>
+        )}
+
+        <form onSubmit={handleResetPassword} className="space-y-4">
+          <div>
+            <label className="block text-gray-400 text-sm mb-1.5">Email пользователя</label>
+            <input type="email" value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="user@example.com"
+              className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none"
+              required />
+          </div>
+          <button type="submit" disabled={loading}
+            className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+            {loading ? 'Отправка...' : 'Отправить ссылку сброса пароля'}
+          </button>
+        </form>
+      </div>
+
+      <div className="mt-6 bg-gray-900 rounded-xl border border-gray-800 p-6 max-w-lg">
+        <h2 className="text-lg font-semibold text-white mb-3">Как это работает</h2>
+        <ol className="text-gray-400 text-sm space-y-2 list-decimal list-inside">
+          <li>Администратор вводит email пользователя</li>
+          <li>Нажимает кнопку «Отправить ссылку сброса пароля»</li>
+          <li>Firebase отправляет email пользователю со ссылкой</li>
+          <li>Пользователь переходит по ссылке и устанавливает новый пароль</li>
+        </ol>
+        <p className="text-gray-500 text-xs mt-3">
+          Ссылка действительна 1 час. Администратор не видит и не задаёт пароль — это обеспечивает безопасность аккаунтов пользователей.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default UserList;

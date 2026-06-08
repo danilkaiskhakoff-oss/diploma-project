@@ -1,9 +1,35 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { levels } from '../data/levels';
 import CyberThreatMap from './CyberThreatMap';
+import { getLevels, subscribeToLevels } from '../services/DataService';
 
 function LevelSelect({ onSelectLevel, onOpenAuth, onNavigate, user }) {
+  const [levels, setLevels] = useState({});
+  const [loading, setLoading] = useState(true);
   const isAnonymous = user?.type === 'anonymous';
+
+  useEffect(() => {
+    setLoading(true);
+    // Try real-time subscription first
+    const unsubscribe = subscribeToLevels((data) => {
+      setLevels(data);
+      setLoading(false);
+    });
+    // Fallback: load once
+    getLevels().then(data => {
+      setLevels(data);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+        <div className="text-gray-400">Загрузка...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-4 overflow-hidden">
@@ -102,7 +128,7 @@ function LevelSelect({ onSelectLevel, onOpenAuth, onNavigate, user }) {
               </h2>
               <p className="text-gray-300 text-center text-base mb-4">{level.description}</p>
               <div className="text-center">
-                <span className="text-xs text-gray-400">{level.checkpoints.length} тем</span>
+                <span className="text-xs text-gray-400">{level.checkpoints?.length || 0} тем</span>
               </div>
               <div
                 className="mt-6 w-full py-3 rounded-lg text-center font-medium transition-all shadow-lg"

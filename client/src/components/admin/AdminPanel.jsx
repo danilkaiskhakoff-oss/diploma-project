@@ -12,7 +12,6 @@ const LevelList = lazy(() => import('./levels/LevelList'));
 const LevelEditor = lazy(() => import('./levels/LevelEditor'));
 const BriefingList = lazy(() => import('./briefings/BriefingList'));
 const BriefingEditor = lazy(() => import('./briefings/BriefingEditor'));
-const SimulationList = lazy(() => import('./simulations/SimulationList'));
 const UserList = lazy(() => import('./users/UserList'));
 
 function SectionFallback() {
@@ -111,7 +110,6 @@ function AdminPanel({ isLoggedIn }) {
         case 'level-editor': return <LevelEditor levelId={selectedLevel} onBack={handleBackToLevels} />;
         case 'briefings': return <BriefingList onSelectBriefing={handleSelectBriefing} />;
         case 'briefing-editor': return <BriefingEditor briefingId={selectedBriefing} onBack={handleBackToBriefings} />;
-        case 'simulations': return <SimulationList onNavigateToLevel={handleNavigateToLevelFromSim} />;
         case 'users': return <UserList />;
         default: return <AdminDashboard />;
       }
