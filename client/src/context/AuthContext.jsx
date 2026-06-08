@@ -133,7 +133,16 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     if (isFirebaseConfigured && auth) {
       await signOut(auth);
-      // After signOut, onAuthStateChanged will trigger anonymous sign in
+      // Immediately set user to anonymous to avoid stale UI state
+      setUser({
+        type: 'anonymous',
+        id: 'logout_fallback_' + Date.now(),
+        displayName: 'Гость',
+        email: null,
+        emailVerified: false,
+        firebaseUser: null
+      });
+      // onAuthStateChanged will fire and update with real anonymous user
     } else {
       setUser({
         type: 'anonymous',

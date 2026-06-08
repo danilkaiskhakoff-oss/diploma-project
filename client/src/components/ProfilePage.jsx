@@ -8,12 +8,8 @@ function ProfilePage({ onNavigate }) {
 
   const handleLogout = async () => {
     await logout();
-    if (onNavigate) {
-      onNavigate('/');
-    } else {
-      window.history.pushState({}, '', '/');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    }
+    // Full reload to ensure clean state after logout
+    window.location.href = '/';
   };
   const [stats, setStats] = useState(null);
   const [achievements, setAchievements] = useState([]);
