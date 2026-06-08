@@ -91,8 +91,8 @@ function ProfilePage() {
       {/* Back button */}
       <div className="max-w-5xl mx-auto px-6 pt-4">
         <button
-          onClick={() => window.history.pushState({}, '', '/')}
-          className="px-4 py-2 bg-[#1a1a2e] border border-gray-700 rounded-lg text-gray-300 hover:text-white hover:border-[#00ff88] transition text-sm"
+          onClick={() => { window.history.pushState({}, '', '/'); window.dispatchEvent(new PopStateEvent('popstate')); }}
+          className="px-4 py-2 bg-[#1a1a2e] border border-gray-700 rounded-lg text-gray-300 hover:text-white hover:border-[#00ff88] transition text-sm cursor-pointer"
         >
           ← На главную
         </button>
