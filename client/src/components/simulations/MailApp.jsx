@@ -24,7 +24,7 @@ function MailApp({ simulation, hintsEnabled, onClose, onComplete }) {
     setUserChoice(choice);
     setShowAnalysis(true);
     if (!analyzedEmails.includes(selectedEmail.id)) {
-      setAnalyzedEmails([...analyzedEmails, selectedEmail.id]);
+      setAnalyzedEmails(prev => [...prev, selectedEmail.id]);
     }
     
     // Dispatch threat update for ThreatMeter

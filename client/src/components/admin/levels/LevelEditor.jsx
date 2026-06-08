@@ -32,6 +32,8 @@ function LevelEditor({ levelId, onBack }) {
   };
 
   const handleSave = async () => {
+    // Validate required fields
+    if (!formData.name?.trim()) { alert('Название уровня не может быть пустым'); return; }
     setSaving(true);
     try {
       const docRef = doc(db, 'levels', levelId);

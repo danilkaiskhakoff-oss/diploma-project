@@ -19,7 +19,6 @@ function WifiSecuritySimulation({ simulation, onComplete }) {
 
   // User choices
   const [routerConfig, setRouterConfig] = useState({});
-  const [networkChoice, setNetworkChoice] = useState(null);
 
   useEffect(() => {
     const timer1 = setTimeout(() => setBootPhase('logo'), 500);
@@ -49,7 +48,7 @@ function WifiSecuritySimulation({ simulation, onComplete }) {
       setRouterConfig(result.config);
     }
     if (stage === 'evilTwin') {
-      setNetworkChoice(result.choice);
+      // result.choice stored implicitly via routerConfig/scores
     }
 
     const stages = ['setup', 'evilTwin', 'sniffing'];

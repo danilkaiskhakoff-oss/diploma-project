@@ -38,6 +38,7 @@ function latLonToVector3(lat, lon, radius = 5) {
 
 function AttackPoint({ position, color }) {
   const mesh = useRef();
+  const geometry = useMemo(() => new THREE.SphereGeometry(0.08, 16, 16), []);
   
   useFrame((state) => {
     if (mesh.current) {
@@ -46,8 +47,7 @@ function AttackPoint({ position, color }) {
   });
 
   return (
-    <mesh ref={mesh} position={position}>
-      <sphereGeometry args={[0.08, 16, 16]} />
+    <mesh ref={mesh} position={position} geometry={geometry}>
       <meshBasicMaterial color={color} />
     </mesh>
   );
@@ -64,16 +64,14 @@ function AttackLine({ start, end, color }) {
     return curve.getPoints(50);
   }, [start, end]);
 
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(points.flatMap(p => [p.x, p.y, p.z]), 3));
+    return geo;
+  }, [points]);
+
   return (
-    <line>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={points.length}
-          array={new Float32Array(points.flatMap(p => [p.x, p.y, p.z]))}
-          itemSize={3}
-        />
-      </bufferGeometry>
+    <line geometry={geometry}>
       <lineBasicMaterial color={color} transparent opacity={0.6} />
     </line>
   );

@@ -108,7 +108,7 @@ export const briefings = {
     ],
     stages: [
       { icon: '🔎', name: 'Разведка', desc: 'Сканирование сети с Nmap' },
-      { icon: '', name: 'Анализ уязвимостей', desc: 'Поиск слабых мест' },
+      { icon: '🔍', name: 'Анализ уязвимостей', desc: 'Поиск слабых мест' },
       { icon: '💥', name: 'Эксплуатация', desc: 'Демонстрация взлома' },
       { icon: '📝', name: 'Квиз', desc: 'Проверка знаний' }
     ]
@@ -152,7 +152,7 @@ export const briefings = {
       },
       {
         term: 'Eradication',
-        icon: '',
+        icon: '🧹',
         definition: 'Полное удаление угрозы из системы',
         example: 'Удаление malware, закрытие уязвимостей, сброс скомпрометированных паролей'
       },
@@ -191,7 +191,7 @@ export const briefings = {
       },
       {
         term: 'Shodan',
-        icon: '',
+        icon: '🔌',
         definition: 'Поисковик подключённых к интернету устройств',
         example: 'Поиск веб-камер, серверов, роутеров с открытыми портами'
       },
@@ -209,7 +209,7 @@ export const briefings = {
       },
       {
         term: 'Maltego',
-        icon: '️',
+    icon: '🌐',
         definition: 'Инструмент для визуализации связей между объектами',
         example: 'Построение графа связей: человек → email → домен → IP → сервер'
       },
@@ -221,10 +221,10 @@ export const briefings = {
       }
     ],
     stages: [
-      { icon: '', name: 'Google Dorks', desc: 'Поиск через специальные запросы' },
+      { icon: '🔎', name: 'Google Dorks', desc: 'Поиск через специальные запросы' },
       { icon: '🌐', name: 'Shodan', desc: 'Поиск устройств в интернете' },
       { icon: '👤', name: 'Social Recon', desc: 'Разведка через соцсети' },
-      { icon: '', name: 'Квиз', desc: 'Проверка знаний' }
+      { icon: '📝', name: 'Квиз', desc: 'Проверка знаний' }
     ]
   }
 };

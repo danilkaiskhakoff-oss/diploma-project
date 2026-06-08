@@ -50,6 +50,11 @@ function ThemeEditor() {
   };
 
   const handleSave = async () => {
+    // Validate hex colors
+    const hexRegex = /^#[0-9a-fA-F]{6}$/;
+    for (const [key, value] of Object.entries(config.colors || {})) {
+      if (!hexRegex.test(value)) { alert(`Цвет "${key}" имеет неверный формат. Используйте #RRGGBB`); return; }
+    }
     setSaving(true);
     setSaved(false);
     try {

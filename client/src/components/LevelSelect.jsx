@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { levels } from '../data/levels';
 import CyberThreatMap from './CyberThreatMap';
 
-function LevelSelect({ onSelectLevel, onOpenAuth, user }) {
+function LevelSelect({ onSelectLevel, onOpenAuth, onNavigate, user }) {
   const isAnonymous = user?.type === 'anonymous';
 
   return (
@@ -34,7 +34,7 @@ function LevelSelect({ onSelectLevel, onOpenAuth, user }) {
           ) : (
             <>
               <button
-                onClick={() => window.history.pushState({}, '', '/profile')}
+                onClick={() => onNavigate('/profile')}
                 className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-800 text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-700 hover:text-white transition"
               >
                 <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#00ff88] to-blue-500 flex items-center justify-center text-[10px] font-bold text-gray-900">
@@ -43,7 +43,7 @@ function LevelSelect({ onSelectLevel, onOpenAuth, user }) {
                 <span className="hidden sm:inline">{user?.displayName}</span>
               </button>
               <button
-                onClick={() => window.history.pushState({}, '', '/profile')}
+                onClick={() => onNavigate('/profile')}
                 className="px-4 py-2 text-sm bg-gray-800 text-gray-300 border border-gray-700 rounded-lg hover:bg-gray-700 hover:text-white transition"
               >
                 Профиль

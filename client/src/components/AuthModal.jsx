@@ -3,18 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
 function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
-  const { login, register } = useAuth();
+  const { login, register, resetPassword } = useAuth();
   const [tab, setTab] = useState(initialTab);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     if (tab === 'register') {
       if (!displayName.trim()) {
@@ -29,6 +33,11 @@ function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
         setError('Пароль должен быть не менее 6 символов');
         return;
       }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError('Введите корректный email');
+        return;
+      }
     }
 
     setLoading(true);
@@ -37,6 +46,7 @@ function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
         await login(email, password);
       } else {
         await register(displayName, email, password);
+        setSuccess('На вашу почту отправлено письмо для подтверждения email');
       }
       onClose();
     } catch (err) {
@@ -58,6 +68,122 @@ function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
     }
   };
 
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(resetEmail)) {
+      setError('Введите корректный email');
+      return;
+    }
+    setLoading(true);
+    try {
+      await resetPassword(resetEmail);
+      setSuccess('Ссылка для сброса пароля отправлена на ' + resetEmail);
+      setResetEmail('');
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') {
+        setError('Пользователь с таким email не найден');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Неверный формат email');
+      } else {
+        setError(err.message || 'Ошибка. Попробуйте ещё раз.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (showReset) {
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={onClose}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 30 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 30 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl overflow-visible relative"
+            >
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 text-gray-500 hover:text-white transition text-xl z-10"
+              >
+                ✕
+              </button>
+
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className="text-4xl mb-3">🔐</div>
+                  <h2 className="text-xl font-bold text-white">Сброс пароля</h2>
+                  <p className="text-gray-400 text-sm mt-1">
+                    Введите email, и мы отправим ссылку для сброса пароля
+                  </p>
+                </div>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-red-900/30 border border-red-800 text-red-300 p-3 rounded-lg mb-4 text-sm"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+
+                {success && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-green-900/30 border border-green-800 text-green-300 p-3 rounded-lg mb-4 text-sm"
+                  >
+                    {success}
+                  </motion.div>
+                )}
+
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-gray-400 text-sm mb-1.5">Email</label>
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-[#00ff88] focus:outline-none transition"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-3 bg-[#00ff88] text-gray-900 font-bold rounded-lg hover:bg-[#00cc6a] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? 'Отправка...' : 'Отправить ссылку'}
+                  </button>
+                </form>
+
+                <p className="text-gray-500 text-xs text-center mt-4">
+                  <button onClick={() => { setShowReset(false); setError(''); setSuccess(''); }} className="text-[#00ff88] hover:underline">
+                    ← Вернуться ко входу
+                  </button>
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  }
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -73,12 +199,12 @@ function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl overflow-hidden"
+            className="bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-md shadow-2xl overflow-visible relative"
           >
             {/* Header */}
             <div className="flex border-b border-gray-800">
               <button
-                onClick={() => { setTab('login'); setError(''); }}
+                onClick={() => { setTab('login'); setError(''); setSuccess(''); }}
                 className={`flex-1 py-4 text-center font-medium transition ${
                   tab === 'login'
                     ? 'text-white border-b-2 border-[#00ff88] bg-gray-800/50'
@@ -88,7 +214,7 @@ function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
                 Вход
               </button>
               <button
-                onClick={() => { setTab('register'); setError(''); }}
+                onClick={() => { setTab('register'); setError(''); setSuccess(''); }}
                 className={`flex-1 py-4 text-center font-medium transition ${
                   tab === 'register'
                     ? 'text-white border-b-2 border-[#00ff88] bg-gray-800/50'
@@ -102,16 +228,16 @@ function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white transition text-xl"
+              className="absolute top-4 right-4 text-gray-500 hover:text-white transition text-xl z-10"
             >
-              ✕
+              
             </button>
 
             {/* Form */}
             <div className="p-6">
               <div className="text-center mb-6">
                 <div className="text-4xl mb-3">
-                  {tab === 'login' ? '🔑' : '📝'}
+                  {tab === 'login' ? '' : '📝'}
                 </div>
                 <h2 className="text-xl font-bold text-white">
                   {tab === 'login' ? 'Вход в аккаунт' : 'Создать аккаунт'}
@@ -130,6 +256,16 @@ function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
                   className="bg-red-900/30 border border-red-800 text-red-300 p-3 rounded-lg mb-4 text-sm"
                 >
                   {error}
+                </motion.div>
+              )}
+
+              {success && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-green-900/30 border border-green-800 text-green-300 p-3 rounded-lg mb-4 text-sm"
+                >
+                  {success}
                 </motion.div>
               )}
 
@@ -197,6 +333,14 @@ function AuthModal({ isOpen, onClose, initialTab = 'login' }) {
                   }
                 </button>
               </form>
+
+              {tab === 'login' && (
+                <p className="text-gray-500 text-xs text-center mt-3">
+                  <button onClick={() => { setShowReset(true); setError(''); setSuccess(''); }} className="text-[#00ff88] hover:underline">
+                    Забыли пароль?
+                  </button>
+                </p>
+              )}
 
               <p className="text-gray-500 text-xs text-center mt-4">
                 {tab === 'login' ? (

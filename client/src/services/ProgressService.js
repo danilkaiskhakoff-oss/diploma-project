@@ -3,7 +3,8 @@ import {
   doc,
   setDoc,
   getDoc,
-  updateDoc
+  updateDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import { levels } from '../data/levels';
 
@@ -16,7 +17,7 @@ export async function saveProgress(userId, isRegistered, levelId, checkpointId, 
     quizTotal: data.quizTotal || 0,
     totalScore: (data.stageScore || 0) + (data.quizScore || 0),
     totalPossible: (data.stageMax || 0) + (data.quizTotal || 0),
-    completedAt: new Date().toISOString()
+    completedAt: serverTimestamp()
   };
 
   if (isFirebaseConfigured && db) {
@@ -49,8 +50,8 @@ export async function saveProgress(userId, isRegistered, levelId, checkpointId, 
         progressData.attempts = 1;
         await setDoc(userRef, {
           progress: { [levelId]: { [checkpointId]: progressData } },
-          createdAt: new Date().toISOString()
-        });
+          createdAt: serverTimestamp()
+        }, { merge: true });
       }
     } catch (error) {
       console.error('Error saving progress to Firestore:', error);
@@ -78,7 +79,12 @@ export async function resetProgress(userId, isRegistered) {
   if (isFirebaseConfigured && db) {
     try {
       const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, { progress: {} });
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        await updateDoc(userRef, { progress: {} });
+      } else {
+        await setDoc(userRef, { progress: {} }, { merge: true });
+      }
     } catch (error) {
       console.error('Error resetting progress:', error);
     }
@@ -194,8 +200,9 @@ export function getAchievements(progress) {
   });
   const allBriefings = stats.details.filter(d => {
     const level = levels[d.levelId];
-    const cp = level?.checkpoints.find(c => c.id === d.checkpointId);
-    return d.levelId === 'advanced';
+    if (!level) return false;
+    const cp = level.checkpoints.find(c => c.id === d.checkpointId);
+    return cp?.simulation?.briefing || cp?.type === 'briefing';
   });
 
   const allSimulationsCompleted = allSimulations.length > 0 && allSimulations.every(d => d.completed);
@@ -226,7 +233,7 @@ export function getAchievements(progress) {
   }
 
   if (allBriefingsCompleted) {
-    achievements.push({ id: 'theorist', icon: '', title: 'Теоретик', description: 'Все брифинги прочитаны', unlocked: true });
+    achievements.push({ id: 'theorist', icon: '📚', title: 'Теоретик', description: 'Все брифинги прочитаны', unlocked: true });
   } else {
     achievements.push({ id: 'theorist', icon: '📚', title: 'Теоретик', description: 'Все брифинги прочитаны', unlocked: false });
   }

@@ -31,9 +31,11 @@ function Desktop({ simulation, onComplete }) {
   const handleShutdown = () => {
     setIsShuttingDown(true);
     // Show shutdown animation for 2.5 seconds, then exit
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       onComplete();
     }, 2500);
+    // Cleanup on unmount
+    return () => clearTimeout(timer);
   };
 
   // If shutting down, show only the shutdown screen

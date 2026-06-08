@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PhoneCall from './PhoneCall';
-import SocialEngineeringDM from './SocialEngineeringDM';
+import PhoneDialog from './PhoneDialog';
 import ManipulationAnalysis from './ManipulationAnalysis';
 
 function SocialEngineeringSimulation({ simulation, onComplete }) {
@@ -19,8 +19,6 @@ function SocialEngineeringSimulation({ simulation, onComplete }) {
 
   // User choices
   const [callChoice, setCallChoice] = useState(null);
-  const [dialogChoices, setDialogChoices] = useState([]);
-  const [manipulationsFound, setManipulationsFound] = useState([]);
 
   useEffect(() => {
     const timer1 = setTimeout(() => setBootPhase('logo'), 500);

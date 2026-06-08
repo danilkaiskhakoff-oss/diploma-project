@@ -88,7 +88,7 @@ function NetworkAttacksSimulation({ simulation, onComplete }) {
           >
             <div className="text-6xl mb-4 font-mono">{percentage >= 70 ? '[OK]' : '[FAIL]'}</div>
             <h2 className="text-3xl font-bold text-green-400 mb-2 font-mono">
-              {percentage >= 90 ? 'ЗАЩИТА АКТИВИРОВАНА' : percentage >= 70 ? 'ЗАЩИЧА ЧАСТИЧНАЯ' : 'СИСТЕМА УЯЗВИМА'}
+              {percentage >= 90 ? 'ЗАЩИТА АКТИВИРОВАНА' : percentage >= 70 ? 'ЗАЩИТА ЧАСТИЧНАЯ' : 'СИСТЕМА УЯЗВИМА'}
             </h2>
             <p className="text-xl text-gray-400 font-mono">
               SCORE: {total}/{max} ({percentage}%)

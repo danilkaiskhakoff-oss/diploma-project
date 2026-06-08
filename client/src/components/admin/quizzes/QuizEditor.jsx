@@ -27,6 +27,13 @@ function QuizEditor({ quizId, onBack }) {
   };
 
   const handleSave = async () => {
+    // Validate
+    for (let i = 0; i < (quiz.questions || []).length; i++) {
+      const q = quiz.questions[i];
+      if (!q.question.trim()) { alert(`Вопрос ${i+1}: текст не может быть пустым`); return; }
+      if (q.correctIndex < 0 || q.correctIndex >= q.options.length) { alert(`Вопрос ${i+1}: неверный correctIndex`); return; }
+      if (q.options.some(o => !o.trim())) { alert(`Вопрос ${i+1}: варианты ответов не могут быть пустыми`); return; }
+    }
     setSaving(true);
     setSaved(false);
     try {

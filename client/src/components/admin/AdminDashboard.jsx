@@ -12,7 +12,13 @@ function AdminDashboard({ onNavigate }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
+    let cancelled = false;
+    const run = async () => {
+      await loadStats();
+      if (cancelled) return;
+    };
+    run();
+    return () => { cancelled = true; };
   }, []);
 
   const loadStats = async () => {
@@ -42,6 +48,8 @@ function AdminDashboard({ onNavigate }) {
     }
   };
 
+  const colorMap = { blue: 'text-blue-400', green: 'text-green-400', yellow: 'text-yellow-400', purple: 'text-purple-400' };
+
   const statCards = [
     { icon: '', label: 'Уровни', value: stats.levels, color: 'blue' },
     { icon: '📝', label: 'Квизы', value: stats.quizzes, color: 'green' },
@@ -70,7 +78,7 @@ function AdminDashboard({ onNavigate }) {
           >
             <div className="flex items-center justify-between mb-4">
               <span className="text-3xl">{stat.icon}</span>
-              <span className={`text-3xl font-bold text-${stat.color}-400`}>
+              <span className={`text-3xl font-bold ${colorMap[stat.color] || 'text-gray-400'}`}>
                 {stat.value}
               </span>
             </div>

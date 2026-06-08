@@ -44,7 +44,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
   };
 
   const handleSimulationComplete = (data) => {
-    setStageResult(data || { stageScore: 1, stageMax: 1 });
+    setStageResult(data || null);
     if (quiz.length > 0) {
       setCurrentStep('quiz');
     } else {
@@ -209,8 +209,8 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
           {currentStep === 'results' && (
             <div className="text-center">
               <div className="text-6xl mb-4">
-                {score === quiz.length && stageResult?.stageScore === stageResult?.stageMax ? '🏆' :
-                 score >= quiz.length / 2 ? '👍' : '📚'}
+                {quiz.length > 0 && score === quiz.length && stageResult?.stageScore === stageResult?.stageMax ? '🏆' :
+                 quiz.length > 0 && score >= quiz.length / 2 ? '👍' : '📚'}
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Результат</h3>
 
@@ -231,9 +231,9 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
               </div>
 
               <p className="text-gray-400 mb-6">
-                {score === quiz.length && stageResult?.stageScore === stageResult?.stageMax
+                {quiz.length > 0 && score === quiz.length && stageResult?.stageScore === stageResult?.stageMax
                   ? 'Отлично! Идеальный результат!'
-                  : score >= quiz.length / 2
+                  : quiz.length > 0 && score >= quiz.length / 2
                   ? 'Хороший результат! Но есть куда расти.'
                   : 'Рекомендуем перечитать теорию и попробовать снова.'}
               </p>

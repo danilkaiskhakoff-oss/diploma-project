@@ -1,17 +1,27 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from '../../firebase/config';
 import AdminLogin from './AdminLogin';
 import AdminSidebar from './AdminSidebar';
-import AdminDashboard from './AdminDashboard';
-import QuizList from './quizzes/QuizList';
-import QuizEditor from './quizzes/QuizEditor';
-import ThemeEditor from './ui-config/ThemeEditor';
-import LevelList from './levels/LevelList';
-import LevelEditor from './levels/LevelEditor';
-import BriefingList from './briefings/BriefingList';
-import BriefingEditor from './briefings/BriefingEditor';
-import SimulationList from './simulations/SimulationList';
+
+const AdminDashboard = lazy(() => import('./AdminDashboard'));
+const QuizList = lazy(() => import('./quizzes/QuizList'));
+const QuizEditor = lazy(() => import('./quizzes/QuizEditor'));
+const ThemeEditor = lazy(() => import('./ui-config/ThemeEditor'));
+const LevelList = lazy(() => import('./levels/LevelList'));
+const LevelEditor = lazy(() => import('./levels/LevelEditor'));
+const BriefingList = lazy(() => import('./briefings/BriefingList'));
+const BriefingEditor = lazy(() => import('./briefings/BriefingEditor'));
+const SimulationList = lazy(() => import('./simulations/SimulationList'));
+const UserList = lazy(() => import('./users/UserList'));
+
+function SectionFallback() {
+  return (
+    <div className="flex items-center justify-center h-64 text-gray-400 text-lg">
+      Загрузка...
+    </div>
+  );
+}
 
 function AdminPanel({ isLoggedIn }) {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -91,28 +101,22 @@ function AdminPanel({ isLoggedIn }) {
   }
 
   const renderContent = () => {
-    switch (activeSection) {
-      case 'dashboard':
-        return <AdminDashboard onNavigate={(section) => setActiveSection(section)} />;
-      case 'quizzes':
-        return <QuizList onSelectQuiz={handleSelectQuiz} />;
-      case 'quiz-editor':
-        return <QuizEditor quizId={selectedQuiz} onBack={handleBackToQuizzes} />;
-      case 'ui-config':
-        return <ThemeEditor />;
-      case 'levels':
-        return <LevelList onSelectLevel={handleSelectLevel} />;
-      case 'level-editor':
-        return <LevelEditor levelId={selectedLevel} onBack={handleBackToLevels} />;
-      case 'briefings':
-        return <BriefingList onSelectBriefing={handleSelectBriefing} />;
-      case 'briefing-editor':
-        return <BriefingEditor briefingId={selectedBriefing} onBack={handleBackToBriefings} />;
-      case 'simulations':
-        return <SimulationList onNavigateToLevel={handleNavigateToLevelFromSim} />;
-      default:
-        return <AdminDashboard />;
-    }
+    const section = (() => {
+      switch (activeSection) {
+        case 'dashboard': return <AdminDashboard onNavigate={(section) => setActiveSection(section)} />;
+        case 'quizzes': return <QuizList onSelectQuiz={handleSelectQuiz} />;
+        case 'quiz-editor': return <QuizEditor quizId={selectedQuiz} onBack={handleBackToQuizzes} />;
+        case 'ui-config': return <ThemeEditor />;
+        case 'levels': return <LevelList onSelectLevel={handleSelectLevel} />;
+        case 'level-editor': return <LevelEditor levelId={selectedLevel} onBack={handleBackToLevels} />;
+        case 'briefings': return <BriefingList onSelectBriefing={handleSelectBriefing} />;
+        case 'briefing-editor': return <BriefingEditor briefingId={selectedBriefing} onBack={handleBackToBriefings} />;
+        case 'simulations': return <SimulationList onNavigateToLevel={handleNavigateToLevelFromSim} />;
+        case 'users': return <UserList />;
+        default: return <AdminDashboard />;
+      }
+    })();
+    return <Suspense fallback={<SectionFallback />}>{section}</Suspense>;
   };
 
   return (

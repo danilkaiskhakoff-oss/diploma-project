@@ -147,8 +147,8 @@ function Map3D({ level, onReset, user, onOpenAuth }) {
   };
 
   const handleComplete = async (data) => {
-    if (selectedCheckpoint && !completedCheckpoints.includes(selectedCheckpoint.id)) {
-      setCompletedCheckpoints([...completedCheckpoints, selectedCheckpoint.id]);
+    if (selectedCheckpoint) {
+      setCompletedCheckpoints(prev => prev.includes(selectedCheckpoint.id) ? prev : [...prev, selectedCheckpoint.id]);
     }
     if (user && selectedCheckpoint && data) {
       await saveProgress(user.id, user.type === 'registered', level.id, selectedCheckpoint.id, data);

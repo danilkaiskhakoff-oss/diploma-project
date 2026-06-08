@@ -8,7 +8,9 @@ import {
   onAuthStateChanged,
   signInAnonymously,
   linkWithCredential,
-  EmailAuthProvider
+  EmailAuthProvider,
+  sendEmailVerification,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 
 const AuthContext = createContext(null);
@@ -39,6 +41,7 @@ export function AuthProvider({ children }) {
           id: firebaseUser.uid,
           displayName: firebaseUser.displayName || (firebaseUser.isAnonymous ? 'Гость' : 'Пользователь'),
           email: firebaseUser.email || null,
+          emailVerified: firebaseUser.emailVerified || false,
           firebaseUser
         });
       } else {
@@ -69,15 +72,8 @@ export function AuthProvider({ children }) {
 
   const loginAsGuest = async () => {
     if (isFirebaseConfigured && auth) {
+      // onAuthStateChanged handles the anonymous sign-in automatically after signOut
       await signOut(auth);
-      const result = await signInAnonymously(auth);
-      setUser({
-        type: 'anonymous',
-        id: result.user.uid,
-        displayName: 'Гость',
-        email: null,
-        firebaseUser: result.user
-      });
     }
   };
 
@@ -143,12 +139,22 @@ export function AuthProvider({ children }) {
   };
 
   const updateDisplayName = async (newName) => {
-    if (user?.firebaseUser) {
+    if (!user) return;
+    if (user.firebaseUser) {
       await updateProfile(user.firebaseUser, { displayName: newName });
-      setUser(prev => ({ ...prev, displayName: newName }));
-    } else {
-      setUser(prev => ({ ...prev, displayName: newName }));
     }
+    setUser(prev => (prev ? { ...prev, displayName: newName } : prev));
+  };
+
+  const resendVerification = async () => {
+    if (!user?.firebaseUser) throw new Error('Пользователь не авторизован');
+    if (user.emailVerified) throw new Error('Email уже подтверждён');
+    await sendEmailVerification(user.firebaseUser);
+  };
+
+  const resetPassword = async (email) => {
+    if (!isFirebaseConfigured || !auth) throw new Error('Firebase не настроен');
+    await sendPasswordResetEmail(auth, email);
   };
 
   const value = {
@@ -156,11 +162,14 @@ export function AuthProvider({ children }) {
     loading,
     isAnonymous: user?.type === 'anonymous',
     isRegistered: user?.type === 'registered',
+    emailVerified: user?.emailVerified || false,
     loginAsGuest,
     login,
     register,
     logout,
-    updateDisplayName
+    updateDisplayName,
+    resendVerification,
+    resetPassword
   };
 
   return (

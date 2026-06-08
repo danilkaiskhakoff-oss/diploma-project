@@ -112,7 +112,7 @@ function CyberBasicsSimulation({ simulation, onComplete }) {
   // Boot animation
   if (isShuttingDown) {
     const { total, max } = calculateScore();
-    const percentage = Math.round((total / max) * 100);
+    const percentage = max > 0 ? Math.round((total / max) * 100) : 0;
 
     return (
       <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#1a3a5c] to-[#0a1628]">

@@ -379,31 +379,27 @@ async function generate() {
   children.push(Bullet('A7 → A3, A4, A5: обновлённый контент.'));
 
   children.push(Head('2.4 Концептуальная, логическая и физическая модели БД', 2));
-  children.push(Para('Для хранения данных приложения используется Firebase Firestore — облачная NoSQL база данных.'));
-  children.push(Para('Концептуальная модель описывает сущности и связи между ними:'));
-  children.push(Bullet('User (пользователь) — хранит данные аутентификации;'));
-  children.push(Bullet('Level (уровень) — содержит информацию об уровне сложности и чекпоинтах;'));
-  children.push(Bullet('Checkpoint (чекпоинт) — отдельный модуль обучения в рамках уровня;'));
-  children.push(Bullet('Quiz (квиз) — набор вопросов для проверки знаний;'));
-  children.push(Bullet('Question (вопрос) — отдельный вопрос с вариантами ответов;'));
-  children.push(Bullet('Briefing (брифинг) — теоретический материал для Advanced уровней;'));
-  children.push(Bullet('UIConfig (конфигурация интерфейса) — настройки темы и стилей.'));
-  children.push(Para('Логическая модель определяет структуру коллекций Firestore:'));
+  children.push(Para('Проектирование базы данных выполнено в три этапа: концептуальное, логическое и физическое моделирование. В качестве СУБД используется Firebase Firestore — документо-ориентированная NoSQL база данных реального времени.'));
+  children.push(Para('Концептуальная модель: Основные сущности предметной области: «Пользователь» (User) — хранит данные аутентификации и прогресс; «Чекпоинт» (Checkpoint) — учебный модуль с контентом; «Результат» (Result) — связь между пользователем и чекпоинтом с оценкой; «Уровень» (Level) — группа чекпоинтов по сложности; «Квиз» (Quiz) — вопросы для проверки знаний; «Брифинг» (Briefing) — теоретический материал; «Достижение» (Achievement) — награды пользователя.'));
+  children.push(Para('Логическая модель: Структура коллекций Firestore:'));
+  children.push(Bullet('users/{userId} — документ пользователя: { displayName, email, createdAt, lastLoginAt, progress: { checkpointId: { score, total, attempts, completedAt } }, achievements: [...] };'));
+  children.push(Bullet('levels/{levelId} — документ уровня: { title, description, difficulty, order, checkpoints: [...] };'));
+  children.push(Bullet('checkpoints/{checkpointId} — документ чекпоинта: { title, levelId, order, simulation, quiz: [ { question, options, correctIndex } ], briefing };'));
+  children.push(Bullet('ui-config/{configId} — настройки интерфейса: { theme, title, logo }.'));
+  children.push(Para('Таблица 2 — Структура коллекции users'));
   children.push(Tbl(
-    ['Коллекция', 'Поля', 'Тип данных'],
+    ['Поле', 'Тип', 'Описание'],
     [
-      ['levels', 'id, name, color, description, checkpoints', 'string, string, string, array'],
-      ['quizzes', 'id, title, description, questions', 'string, string, string, array'],
-      ['briefings', 'id, title, subtitle, icon, color, scenario, concepts, stages', 'string, string, string, string, string, object, array, array'],
-      ['ui-config', 'colors, fonts, theme, animations', 'object, object, string, object'],
+      ['uid', 'string', 'Идентификатор пользователя (Firebase UID)'],
+      ['displayName', 'string', 'Отображаемое имя'],
+      ['email', 'string', 'Email (для зарегистрированных)'],
+      ['createdAt', 'timestamp', 'Дата создания аккаунта'],
+      ['lastLoginAt', 'timestamp', 'Дата последнего входа'],
+      ['progress', 'map', 'Карта прогресса по чекпоинтам'],
+      ['achievements', 'array', 'Массив полученных достижений'],
     ]
   ));
-  children.push(Para('Физическая модель реализована в Firebase Firestore со следующей структурой:'));
-  children.push(Para('Коллекция «levels» содержит 3 документа: beginner, intermediate, advanced. Каждый документ включает массив checkpoints с объектами simulation, theory и quiz.'));
-  children.push(Para('Коллекция «quizzes» содержит 14 документов, каждый из которых представляет отдельный квиз с массивом вопросов.'));
-  children.push(Para('Коллекция «briefings» содержит 4 документа для Advanced уровней: ddos, pentest, incident-response, osint.'));
-  children.push(Para('Коллекция «ui-config» содержит 1 документ global с настройками цветовой схемы и анимаций.'));
-  children.push(Para('Индексы: Firestore автоматически создаёт индексы для полей, используемых в запросах. Для коллекции quizzes создан составной индекс по полям title и questions.length для оптимизации поиска.'));
+  children.push(Para('Физическая модель: База данных развёрнута в проекте Firebase cybersecurity-platform-c6bfc. Регион размещения данных — us-central1. Правила безопасности Firestore настроены на разграничение доступа: чтение и запись своих данных разрешены только аутентифицированному пользователю по UID; административные данные доступны только администратору.'));
 
   children.push(Head('2.5 Способы реализации программного продукта', 2));
   children.push(Para('Для реализации программного продукта выбран следующий технологический стек:'));
@@ -614,7 +610,11 @@ async function generate() {
   children.push(Bullet('получение токена аутентификации при успешной проверке;'));
   children.push(Bullet('сохранение состояния авторизации в сессии браузера;'));
   children.push(Bullet('автоматический выход при закрытии вкладки или истечении токена.'));
-  children.push(Para('Регистрация новых пользователей отключена в настройках Firebase Console. Добавление новых администраторов осуществляется вручную через Firebase Console или с помощью Firebase Admin SDK.'));
+  children.push(Para('Регистрация новых пользователей осуществляется через форму регистрации с указанием имени, email и пароля. После успешной регистрации система автоматически отправляет на указанный email письмо для подтверждения адреса электронной почты. Подтверждение email реализовано через встроенный механизм Firebase Authentication (метод sendEmailVerification).'));
+  children.push(Para('Функция сброса пароля доступна в двух вариантах:'));
+  children.push(Bullet('самостоятельный сброс — пользователь нажимает ссылку «Забыли пароль?» на форме входа, вводит email и получает ссылку для установки нового пароля;'));
+  children.push(Bullet('сброс через администратора — администратор вводит email пользователя в разделе «Пользователи» административной панели и инициирует отправку ссылки сброса пароля.'));
+  children.push(Para('В обоих случаях используется метод sendPasswordResetEmail Firebase Authentication. Ссылка для сброса пароля действительна в течение 1 часа. Администратор не имеет возможности просматривать или устанавливать пароль пользователя напрямую — это обеспечивает безопасность аккаунтов.'));
   children.push(Para('Пароли хранятся в хэшированном виде на серверах Firebase. Минимальная длина пароля — 6 символов. При вводе неверных учётных данных отображается сообщение об ошибке без указания конкретного поля.'));
 
   // === 3 ЭКОНОМИЧЕСКАЯ ЧАСТЬ ===

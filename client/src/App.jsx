@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from './firebase/config';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LevelSelect from './components/LevelSelect';
-import Map3D from './components/Map3D';
-import AdminPanel from './components/admin/AdminPanel';
-import ProfilePage from './components/ProfilePage';
 import AuthModal from './components/AuthModal';
+
+const Map3D = lazy(() => import('./components/Map3D'));
+const AdminPanel = lazy(() => import('./components/admin/AdminPanel'));
+const ProfilePage = lazy(() => import('./components/ProfilePage'));
 
 function AppContent() {
   const { user, isRegistered } = useAuth();
@@ -19,17 +20,37 @@ function AppContent() {
   const [authModalTab, setAuthModalTab] = useState('login');
 
   useEffect(() => {
-    const path = window.location.pathname;
-    setIsAdminRoute(path === '/admin');
-    setIsProfileRoute(path === '/profile');
+    const checkRoute = () => {
+      const path = window.location.pathname;
+      setIsAdminRoute(path === '/admin');
+      setIsProfileRoute(path === '/profile');
+    };
+
+    checkRoute();
+    window.addEventListener('popstate', checkRoute);
 
     if (isFirebaseConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        // Only registered (non-anonymous) users are admins
-        setIsAdmin(!!firebaseUser && !firebaseUser.isAnonymous);
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        let admin = false;
+        if (firebaseUser && !firebaseUser.isAnonymous) {
+          // Check against configured admin email
+          const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+          if (firebaseUser.email === adminEmail) {
+            admin = true;
+          } else {
+            // Also try checking custom claims
+            try {
+              const token = await firebaseUser.getIdTokenResult();
+              admin = token.claims.admin === true;
+            } catch (e) {
+              // fallback to email check only
+            }
+          }
+        }
+        setIsAdmin(admin);
         setChecking(false);
       });
-      return unsubscribe;
+      return () => { unsubscribe(); window.removeEventListener('popstate', checkRoute); };
     } else {
       setChecking(false);
     }
@@ -51,20 +72,16 @@ function AppContent() {
     setShowAuthModal(true);
   };
 
+  const fallback = <div className="min-h-screen flex items-center justify-center bg-gray-950"><div className="text-gray-400">Загрузка...</div></div>;
+
   // Admin panel
   if (isAdminRoute) {
-    if (checking) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-950">
-          <div className="text-gray-400">Загрузка...</div>
-        </div>
-      );
-    }
+    if (checking) return fallback;
     return (
-      <>
+      <Suspense fallback={fallback}>
         <AdminPanel isLoggedIn={isAdmin} />
-        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
-      </>
+        <AuthModal key={authModalTab} isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+      </Suspense>
     );
   }
 
@@ -72,13 +89,13 @@ function AppContent() {
   if (isProfileRoute) {
     if (!isRegistered) {
       window.history.pushState({}, '', '/');
-      return <LevelSelect onSelectLevel={setSelectedLevel} onOpenAuth={handleOpenAuth} user={user} />;
+      return <LevelSelect onSelectLevel={setSelectedLevel} onOpenAuth={handleOpenAuth} onNavigate={handleNavigate} user={user} />;
     }
     return (
-      <>
+      <Suspense fallback={fallback}>
         <ProfilePage />
-        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
-      </>
+        <AuthModal key={authModalTab} isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+      </Suspense>
     );
   }
 
@@ -86,14 +103,14 @@ function AppContent() {
   if (!selectedLevel) {
     return (
       <>
-        <LevelSelect onSelectLevel={setSelectedLevel} onOpenAuth={handleOpenAuth} user={user} />
-        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
+        <LevelSelect onSelectLevel={setSelectedLevel} onOpenAuth={handleOpenAuth} onNavigate={handleNavigate} user={user} />
+        <AuthModal key={authModalTab} isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
       </>
     );
   }
 
   return (
-    <>
+    <Suspense fallback={fallback}>
       <Map3D
         level={selectedLevel}
         onReset={handleReset}
@@ -101,7 +118,7 @@ function AppContent() {
         onOpenAuth={handleOpenAuth}
       />
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
-    </>
+    </Suspense>
   );
 }
 

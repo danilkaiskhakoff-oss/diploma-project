@@ -15,7 +15,13 @@ function ProfilePage() {
   const [sortBy, setSortBy] = useState('date'); // date, score, name
 
   useEffect(() => {
-    loadProgress();
+    let cancelled = false;
+    const run = async () => {
+      await loadProgress();
+      if (cancelled) return;
+    };
+    run();
+    return () => { cancelled = true; };
   }, [user]);
 
   const loadProgress = async () => {
@@ -43,9 +49,10 @@ function ProfilePage() {
     }
   };
 
-  const formatDate = (iso) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
+  const formatDate = (value) => {
+    if (!value) return '—';
+    const d = value?.toDate ? value.toDate() : new Date(value);
+    if (isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
@@ -64,7 +71,7 @@ function ProfilePage() {
     } else if (sortBy === 'score') {
       filtered.sort((a, b) => (b.score || 0) - (a.score || 0));
     } else if (sortBy === 'name') {
-      filtered.sort((a, b) => a.title.localeCompare(b.title));
+      filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
     }
     return filtered;
   };
@@ -167,7 +174,7 @@ function ProfilePage() {
           >
             <p className="text-gray-400 text-sm mb-1">Достижения</p>
             <p className="text-4xl font-bold text-purple-400">
-              {achievements.filter(a => a.unlocked).length} / {achievements.length}
+              {achievements.length > 0 ? achievements.filter(a => a.unlocked).length : 0} / {achievements.length || 1}
             </p>
             <p className="text-gray-500 text-xs mt-3">разблокировано</p>
           </motion.div>
@@ -179,7 +186,7 @@ function ProfilePage() {
             <span className="text-[#00ff88]">📈</span> Прогресс по уровням
           </h2>
           <div className="space-y-3">
-            {stats && Object.entries(stats.levelStats).map(([levelId, ls]) => (
+            {stats?.levelStats && Object.entries(stats.levelStats).map(([levelId, ls]) => (
               <motion.div
                 key={levelId}
                 initial={{ opacity: 0, x: -20 }}

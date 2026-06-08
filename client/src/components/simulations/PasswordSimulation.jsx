@@ -5,7 +5,7 @@ import BruteForceAnimation from './BruteForceAnimation';
 import LeakCheck from './LeakCheck';
 import PasswordManager from './PasswordManager';
 import AccountHacked from './AccountHacked';
-import Taskbar from '../simulations/Taskbar';
+import Taskbar from './Taskbar';
 
 function PasswordSimulation({ simulation, onComplete }) {
   const [currentStep, setCurrentStep] = useState('intro');
@@ -238,7 +238,7 @@ function PasswordSimulation({ simulation, onComplete }) {
               onRestart={handleRestart}
               onFinish={() => {
                 setIsShuttingDown(true);
-                setTimeout(() => onComplete(), 2500);
+                setTimeout(() => onComplete({ stageScore: passwordStrength, stageMax: 100 }), 2500);
               }}
             />
           )}

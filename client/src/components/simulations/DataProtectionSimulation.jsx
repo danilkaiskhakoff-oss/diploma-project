@@ -4,7 +4,7 @@ import TwoFactorAuth from './TwoFactorAuth';
 import BackupStrategy from './BackupStrategy';
 import FileEncryption from './FileEncryption';
 import DataLeakScenario from './DataLeakScenario';
-import Taskbar from '../simulations/Taskbar';
+import Taskbar from './Taskbar';
 
 function DataProtectionSimulation({ simulation, onComplete }) {
   const [currentStep, setCurrentStep] = useState('intro');
@@ -158,7 +158,14 @@ function DataProtectionSimulation({ simulation, onComplete }) {
               backupStrategy={backupStrategy}
               filesEncrypted={filesEncrypted}
               onRestart={handleRestart}
-              onFinish={() => { setIsShuttingDown(true); setTimeout(() => onComplete(), 2500); }}
+              onFinish={() => {
+                setIsShuttingDown(true);
+                let score = 0;
+                if (twoFactorEnabled) score += 33;
+                if (backupStrategy && backupStrategy !== 'none') score += 33;
+                if (filesEncrypted) score += 34;
+                setTimeout(() => onComplete({ stageScore: score, stageMax: 100 }), 2500);
+              }}
             />
           )}
         </AnimatePresence>
@@ -289,7 +296,7 @@ function ResultsStep({ twoFactorEnabled, twoFactorMethod, backupStrategy, filesE
   const getScore = () => {
     let score = 0;
     if (twoFactorEnabled) score += 33;
-    if (backupStrategy === '321') score += 33;
+    if (backupStrategy && backupStrategy !== 'none') score += 33;
     if (filesEncrypted) score += 34;
     return score;
   };
@@ -320,7 +327,7 @@ function ResultsStep({ twoFactorEnabled, twoFactorMethod, backupStrategy, filesE
           <span className="text-gray-300">2FA: {twoFactorEnabled ? twoFactorMethod : 'Не включена'}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span>{backupStrategy === '321' ? '✅' : backupStrategy ? '' : ''}</span>
+          <span>{backupStrategy && backupStrategy !== 'none' ? '✅' : backupStrategy === 'none' ? '❌' : '❌'}</span>
           <span className="text-gray-300">Бэкапы: {backupStrategy === '321' ? 'Правило 3-2-1' : backupStrategy || 'Не настроены'}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">

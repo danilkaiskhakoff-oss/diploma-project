@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
 
 const menuItems = [
-  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+  { id: 'dashboard', icon: '', label: 'Dashboard' },
   { id: 'quizzes', icon: '📝', label: 'Квизы' },
   { id: 'levels', icon: '🎯', label: 'Уровни' },
   { id: 'briefings', icon: '📚', label: 'Брифинги' },
-  { id: 'ui-config', icon: '🎨', label: 'Тема' },
-  { id: 'simulations', icon: '🖥️', label: 'Симуляции' }
+  { id: 'simulations', icon: '🖥️', label: 'Симуляции' },
+  { id: 'users', icon: '👥', label: 'Пользователи' },
+  { id: 'ui-config', icon: '', label: 'Тема' }
 ];
 
 function AdminSidebar({ activeSection, onNavigate, onLogout }) {
