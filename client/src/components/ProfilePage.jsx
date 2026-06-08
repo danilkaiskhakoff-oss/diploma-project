@@ -88,6 +88,16 @@ function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+      {/* Back button */}
+      <div className="max-w-5xl mx-auto px-6 pt-4">
+        <button
+          onClick={() => window.history.pushState({}, '', '/')}
+          className="px-4 py-2 bg-[#1a1a2e] border border-gray-700 rounded-lg text-gray-300 hover:text-white hover:border-[#00ff88] transition text-sm"
+        >
+          ← На главную
+        </button>
+      </div>
+
       {/* Header */}
       <div className="border-b border-gray-800 bg-gray-900/50">
         <div className="max-w-5xl mx-auto px-6 py-6">
