@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { auth, isFirebaseConfigured } from '../firebase/config';
+import { auth, db, isFirebaseConfigured } from '../firebase/config';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -12,8 +12,22 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail
 } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext(null);
+
+// Helper: save user data to Firestore
+async function saveUserToFirestore(uid, email, displayName) {
+  if (!isFirebaseConfigured || !db) return;
+  try {
+    await setDoc(doc(db, 'users', uid), {
+      email: email || null,
+      displayName: displayName || 'Пользователь',
+    }, { merge: true });
+  } catch (e) {
+    console.warn('Failed to save user to Firestore:', e);
+  }
+}
 
 export function useAuth() {
   return useContext(AuthContext);
@@ -36,6 +50,14 @@ export function AuthProvider({ children }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // Save user data to Firestore for registered users
+        if (!firebaseUser.isAnonymous) {
+          await saveUserToFirestore(
+            firebaseUser.uid,
+            firebaseUser.email,
+            firebaseUser.displayName || 'Пользователь'
+          );
+        }
         setUser({
           type: firebaseUser.isAnonymous ? 'anonymous' : 'registered',
           id: firebaseUser.uid,
@@ -87,6 +109,7 @@ export function AuthProvider({ children }) {
       throw new Error('Firebase не настроен');
     }
     const result = await signInWithEmailAndPassword(auth, email, password);
+    await saveUserToFirestore(result.user.uid, result.user.email, result.user.displayName || 'Пользователь');
     setUser({
       type: 'registered',
       id: result.user.uid,
@@ -107,6 +130,7 @@ export function AuthProvider({ children }) {
       const credential = EmailAuthProvider.credential(email, password);
       const result = await linkWithCredential(user.firebaseUser, credential);
       await updateProfile(result.user, { displayName });
+      await saveUserToFirestore(result.user.uid, email, displayName);
       setUser({
         type: 'registered',
         id: result.user.uid,
@@ -120,6 +144,7 @@ export function AuthProvider({ children }) {
     // Otherwise create new account
     const result = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(result.user, { displayName });
+    await saveUserToFirestore(result.user.uid, email, displayName);
     setUser({
       type: 'registered',
       id: result.user.uid,
