@@ -107,7 +107,12 @@ function LevelSelect({ onSelectLevel, onOpenAuth, onNavigate, user }) {
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-8 w-full">
-          {Object.values(levels).map((level, index) => (
+          {(() => {
+            const order = ['beginner', 'intermediate', 'advanced'];
+            const sortedLevels = Object.values(levels).sort((a, b) =>
+              order.indexOf(a.id) - order.indexOf(b.id)
+            );
+            return sortedLevels.map((level, index) => (
             <motion.div
               key={level.id}
               initial={{ opacity: 0, y: 50 }}
@@ -141,7 +146,7 @@ function LevelSelect({ onSelectLevel, onOpenAuth, onNavigate, user }) {
                 Начать →
               </div>
             </motion.div>
-          ))}
+          ));})()}
         </div>
       </div>
     </div>
