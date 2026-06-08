@@ -111,6 +111,13 @@ function UserList() {
     downloadFile(json, 'users_report.json', 'application/json');
   };
 
+  const formatDate = (date) => {
+    if (!date) return '—';
+    if (date?.toDate) return date.toDate().toLocaleDateString('ru-RU');
+    if (date instanceof Date) return date.toLocaleDateString('ru-RU');
+    return '—';
+  };
+
   const exportDetailedCSV = () => {
     const headers = ['Пользователь', 'Email', 'Уровень', 'Чекпоинт', 'Баллы', 'Максимум', 'Попытки', 'Дата завершения'];
     const rows = [];
@@ -126,7 +133,7 @@ function UserList() {
               d.score,
               d.total,
               d.attempts,
-              d.completedAt ? d.completedAt.toDate().toLocaleDateString('ru-RU') : '—'
+              formatDate(d.completedAt)
             ]);
           }
         });
@@ -392,7 +399,7 @@ function UserList() {
                                 </td>
                                 <td className="p-3 text-center text-gray-400">{d.attempts}</td>
                                 <td className="p-3 text-center text-gray-500">
-                                  {d.completedAt ? d.completedAt.toDate().toLocaleDateString('ru-RU') : '—'}
+                                  {formatDate(d.completedAt)}
                                 </td>
                               </tr>
                             );

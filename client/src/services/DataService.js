@@ -17,8 +17,8 @@ export async function getLevels() {
       const snapshot = await getDocs(collection(db, 'levels'));
       if (!snapshot.empty) {
         levelsCache = {};
-        snapshot.forEach(doc => {
-          levelsCache[doc.id] = { id: doc.id, ...doc.data() };
+        snapshot.forEach(d => {
+          levelsCache[d.id] = { id: d.id, ...d.data() };
         });
         return levelsCache;
       }
@@ -38,8 +38,8 @@ export async function getBriefings() {
       const snapshot = await getDocs(collection(db, 'briefings'));
       if (!snapshot.empty) {
         briefingsCache = {};
-        snapshot.forEach(doc => {
-          briefingsCache[doc.id] = { id: doc.id, ...doc.data() };
+        snapshot.forEach(d => {
+          briefingsCache[d.id] = { id: d.id, ...d.data() };
         });
         return briefingsCache;
       }
@@ -52,7 +52,7 @@ export async function getBriefings() {
 
 /**
  * Загружает квизы из Firestore
- * Если Firestore не настроен — извлекает квизы из статических уровней
+ * Если Firestore не настроен или пуст — извлекает квизы из статических уровней
  */
 export async function getQuizzes() {
   if (isFirebaseConfigured && db) {
@@ -60,8 +60,8 @@ export async function getQuizzes() {
       const snapshot = await getDocs(collection(db, 'quizzes'));
       if (!snapshot.empty) {
         quizzesCache = {};
-        snapshot.forEach(doc => {
-          quizzesCache[doc.id] = { id: doc.id, ...doc.data() };
+        snapshot.forEach(d => {
+          quizzesCache[d.id] = { id: d.id, ...d.data() };
         });
         return quizzesCache;
       }
@@ -76,9 +76,10 @@ export async function getQuizzes() {
       if (cp.quiz && cp.quiz.length > 0) {
         quizzesCache[cp.id + '-quiz'] = {
           id: cp.id + '-quiz',
-          title: cp.title + ' — Квиз',
+          title: cp.title,
           description: `Квиз по теме "${cp.title}"`,
           levelId: level.id,
+          levelName: level.name,
           questions: cp.quiz
         };
       }
@@ -93,12 +94,16 @@ export async function getQuizzes() {
 export function subscribeToLevels(callback) {
   if (isFirebaseConfigured && db) {
     return onSnapshot(collection(db, 'levels'), (snapshot) => {
-      const levels = {};
-      snapshot.forEach(doc => {
-        levels[doc.id] = { id: doc.id, ...doc.data() };
-      });
-      levelsCache = levels;
-      callback(levels);
+      if (!snapshot.empty) {
+        const levels = {};
+        snapshot.forEach(d => {
+          levels[d.id] = { id: d.id, ...d.data() };
+        });
+        levelsCache = levels;
+        callback(levels);
+      } else {
+        callback(staticLevels);
+      }
     }, (error) => {
       console.warn('Firestore subscription error, using static data:', error);
       callback(staticLevels);
@@ -114,12 +119,31 @@ export function subscribeToLevels(callback) {
 export function subscribeToQuizzes(callback) {
   if (isFirebaseConfigured && db) {
     return onSnapshot(collection(db, 'quizzes'), (snapshot) => {
-      const quizzes = {};
-      snapshot.forEach(doc => {
-        quizzes[doc.id] = { id: doc.id, ...doc.data() };
-      });
-      quizzesCache = quizzes;
-      callback(quizzes);
+      if (!snapshot.empty) {
+        const quizzes = {};
+        snapshot.forEach(d => {
+          quizzes[d.id] = { id: d.id, ...d.data() };
+        });
+        quizzesCache = quizzes;
+        callback(quizzes);
+      } else {
+        // Fallback: extract from static levels
+        const fallback = {};
+        Object.values(staticLevels).forEach(level => {
+          level.checkpoints.forEach(cp => {
+            if (cp.quiz && cp.quiz.length > 0) {
+              fallback[cp.id + '-quiz'] = {
+                id: cp.id + '-quiz',
+                title: cp.title,
+                levelId: level.id,
+                levelName: level.name,
+                questions: cp.quiz
+              };
+            }
+          });
+        });
+        callback(fallback);
+      }
     }, (error) => {
       console.warn('Firestore subscription error:', error);
       callback({});
@@ -183,8 +207,9 @@ export async function getQuiz(quizId) {
       if (cp.id + '-quiz' === quizId && cp.quiz) {
         return {
           id: quizId,
-          title: cp.title + ' — Квиз',
+          title: cp.title,
           levelId: level.id,
+          levelName: level.name,
           questions: cp.quiz
         };
       }
@@ -232,4 +257,66 @@ export async function getQuizzesByLevel() {
   });
 
   return grouped;
+}
+
+/**
+ * Запуск миграции данных из статических файлов в Firestore
+ */
+export async function runMigration() {
+  if (!isFirebaseConfigured || !db) {
+    throw new Error('Firebase не настроен');
+  }
+
+  const { setDoc, doc: firestoreDoc } = await import('firebase/firestore');
+  let totalQuizzes = 0;
+
+  console.log('=== Начало миграции данных в Firebase ===\n');
+
+  // Миграция уровней
+  console.log('Миграция уровней...');
+  for (const [id, level] of Object.entries(staticLevels)) {
+    await setDoc(firestoreDoc(db, 'levels', id), level);
+    console.log(`  ✓ Уровень: ${id} (${level.checkpoints.length} чекпоинтов)`);
+  }
+
+  // Миграция брифингов
+  console.log('\nМиграция брифингов...');
+  for (const [id, briefing] of Object.entries(staticBriefings)) {
+    await setDoc(firestoreDoc(db, 'briefings', id), briefing);
+    console.log(`  ✓ Брифинг: ${id}`);
+  }
+
+  // Миграция квизов
+  console.log('\nМиграция квизов...');
+  for (const [levelId, level] of Object.entries(staticLevels)) {
+    for (const cp of level.checkpoints) {
+      if (cp.quiz && cp.quiz.length > 0) {
+        const quizId = `${cp.id}-quiz`;
+        const quizData = {
+          title: cp.title,
+          description: `Квиз по теме "${cp.title}"`,
+          levelId: levelId,
+          levelName: level.name,
+          questions: cp.quiz
+        };
+        await setDoc(firestoreDoc(db, 'quizzes', quizId), quizData);
+        console.log(`  ✓ Квиз: ${quizId} (${cp.quiz.length} вопросов, уровень: ${level.name})`);
+        totalQuizzes++;
+      }
+    }
+  }
+
+  // Миграция UI config
+  console.log('\nМиграция UI конфигурации...');
+  const uiConfig = {
+    colors: { primary: '#00ff88', secondary: '#ffaa00', accent: '#ff4444', background: '#0a0a0a', text: '#ffffff' },
+    fonts: { heading: 'sans-serif', body: 'sans-serif' },
+    theme: 'dark',
+    animations: { enabled: true, duration: 0.3 }
+  };
+  await setDoc(firestoreDoc(db, 'ui-config', 'global'), uiConfig);
+
+  console.log(`\n=== Миграция завершена! Всего квизов: ${totalQuizzes} ===`);
+
+  return { levels: Object.keys(staticLevels).length, briefings: Object.keys(staticBriefings).length, quizzes: totalQuizzes };
 }

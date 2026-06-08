@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { runMigration } from '../../services/DataService';
 
 function AdminDashboard({ onNavigate }) {
   const [stats, setStats] = useState({
@@ -10,6 +11,9 @@ function AdminDashboard({ onNavigate }) {
     briefings: 0
   });
   const [loading, setLoading] = useState(true);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState(null);
+  const [migrationError, setMigrationError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,6 +49,22 @@ function AdminDashboard({ onNavigate }) {
       console.error('Error loading stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMigration = async () => {
+    if (!confirm('Запустить миграцию данных в Firestore? Это перезапишет существующие данные.')) return;
+    setMigrating(true);
+    setMigrationError(null);
+    setMigrationResult(null);
+    try {
+      const result = await runMigration();
+      setMigrationResult(result);
+      await loadStats();
+    } catch (error) {
+      setMigrationError(error.message);
+    } finally {
+      setMigrating(false);
     }
   };
 
@@ -85,6 +105,32 @@ function AdminDashboard({ onNavigate }) {
             <p className="text-gray-400 text-sm">{stat.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Migration */}
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-8">
+        <h3 className="text-xl font-bold text-white mb-4">Миграция данных</h3>
+        <p className="text-gray-400 text-sm mb-4">
+          Переносит все уровни, квизы и брифинги из статических файлов в Firestore.
+          Запустите один раз при первом развёртывании.
+        </p>
+        <button
+          onClick={handleMigration}
+          disabled={migrating}
+          className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {migrating ? 'Миграция...' : ' Запустить миграцию данных'}
+        </button>
+        {migrationResult && (
+          <div className="mt-4 bg-green-900/30 border border-green-800 text-green-300 p-3 rounded-lg text-sm">
+            ✓ Миграция завершена! Уровней: {migrationResult.levels}, Квизов: {migrationResult.quizzes}, Брифингов: {migrationResult.briefings}
+          </div>
+        )}
+        {migrationError && (
+          <div className="mt-4 bg-red-900/30 border border-red-800 text-red-300 p-3 rounded-lg text-sm">
+            ✗ Ошибка: {migrationError}
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}
