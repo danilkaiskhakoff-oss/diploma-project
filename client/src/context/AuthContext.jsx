@@ -44,8 +44,10 @@ export function AuthProvider({ children }) {
           emailVerified: firebaseUser.emailVerified || false,
           firebaseUser
         });
+        setLoading(false);
       } else {
         // No user — sign in anonymously
+        setLoading(true);
         try {
           const result = await signInAnonymously(auth);
           setUser({
@@ -63,8 +65,8 @@ export function AuthProvider({ children }) {
             displayName: 'Гость'
           });
         }
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return unsubscribe;
