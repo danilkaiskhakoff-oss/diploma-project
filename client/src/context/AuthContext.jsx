@@ -46,8 +46,7 @@ export function AuthProvider({ children }) {
         });
         setLoading(false);
       } else {
-        // No user — sign in anonymously
-        setLoading(true);
+        // No user — sign in anonymously (don't set loading=true to avoid unmounting the app)
         try {
           const result = await signInAnonymously(auth);
           setUser({
@@ -55,6 +54,7 @@ export function AuthProvider({ children }) {
             id: result.user.uid,
             displayName: 'Гость',
             email: null,
+            emailVerified: false,
             firebaseUser: result.user
           });
         } catch (error) {
@@ -62,7 +62,10 @@ export function AuthProvider({ children }) {
           setUser({
             type: 'anonymous',
             id: 'fallback_' + Date.now(),
-            displayName: 'Гость'
+            displayName: 'Гость',
+            email: null,
+            emailVerified: false,
+            firebaseUser: null
           });
         }
         setLoading(false);

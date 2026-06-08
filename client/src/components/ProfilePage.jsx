@@ -3,8 +3,18 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { getProgress, calculateStats, getAchievements, resetProgress } from '../services/ProgressService';
 
-function ProfilePage() {
+function ProfilePage({ onNavigate }) {
   const { user, logout, updateDisplayName } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    if (onNavigate) {
+      onNavigate('/');
+    } else {
+      window.history.pushState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  };
   const [stats, setStats] = useState(null);
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +146,7 @@ function ProfilePage() {
                 Сбросить прогресс
               </button>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="px-4 py-2 text-sm bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition border border-gray-700"
               >
                 Выйти

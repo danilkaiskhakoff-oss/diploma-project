@@ -93,7 +93,7 @@ function AppContent() {
     }
     return (
       <Suspense fallback={fallback}>
-        <ProfilePage />
+        <ProfilePage onNavigate={handleNavigate} />
         <AuthModal key={authModalTab} isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} initialTab={authModalTab} />
       </Suspense>
     );
