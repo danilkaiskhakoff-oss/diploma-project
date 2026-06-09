@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 function AdminPasswordReset({ onClose }) {
   const { resetPassword } = useAuth();
   const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || '';
-  const [email, setEmail] = useState(adminEmail);
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
