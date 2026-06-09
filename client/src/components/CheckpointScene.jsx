@@ -192,56 +192,58 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
                   </button>
                 </div>
               ) : currentQuiz ? (
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-gray-400">Задача {currentQuizIndex + 1} из {quiz.length}</span>
-                <span className="text-sm font-bold" style={{ color: levelColor }}>Счёт: {score}</span>
-              </div>
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm text-gray-400">Задача {currentQuizIndex + 1} из {quiz.length}</span>
+                    <span className="text-sm font-bold" style={{ color: levelColor }}>Счёт: {score}</span>
+                  </div>
 
-              <h3 className="text-lg font-bold text-white mb-6">{currentQuiz.question}</h3>
+                  <h3 className="text-lg font-bold text-white mb-6">{currentQuiz.question}</h3>
 
-              <div className="space-y-3 mb-6">
-                {currentQuiz.options.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswerSelect(index)}
-                    className={`w-full p-4 rounded-lg text-left transition border ${
-                      selectedAnswer === index
-                        ? index === currentQuiz.correctIndex
-                          ? 'bg-green-900/30 border-green-500 text-green-300'
-                          : 'bg-red-900/30 border-red-500 text-red-300'
-                        : 'bg-[#0a0a0f] border-gray-700 text-gray-300 hover:border-gray-500'
-                    }`}
-                    disabled={showExplanation}
-                  >
-                    <span className="font-mono mr-3">{String.fromCharCode(65 + index)}.</span>
-                    {option}
-                  </button>
-                ))}
-              </div>
+                  <div className="space-y-3 mb-6">
+                    {currentQuiz.options.map((option, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleAnswerSelect(index)}
+                        className={`w-full p-4 rounded-lg text-left transition border ${
+                          selectedAnswer === index
+                            ? index === currentQuiz.correctIndex
+                              ? 'bg-green-900/30 border-green-500 text-green-300'
+                              : 'bg-red-900/30 border-red-500 text-red-300'
+                            : 'bg-[#0a0a0f] border-gray-700 text-gray-300 hover:border-gray-500'
+                        }`}
+                        disabled={showExplanation}
+                      >
+                        <span className="font-mono mr-3">{String.fromCharCode(65 + index)}.</span>
+                        {option}
+                      </button>
+                    ))}
+                  </div>
 
-              {showExplanation && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`p-4 rounded-lg mb-6 ${
-                    selectedAnswer === currentQuiz.correctIndex
-                      ? 'bg-green-900/20 border border-green-800'
-                      : 'bg-red-900/20 border border-red-800'
-                  }`}
-                >
-                  <p className="text-sm text-gray-300">{currentQuiz.explanation}</p>
-                </motion.div>
-              )}
+                  {showExplanation && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`p-4 rounded-lg mb-6 ${
+                        selectedAnswer === currentQuiz.correctIndex
+                          ? 'bg-green-900/20 border border-green-800'
+                          : 'bg-red-900/20 border border-red-800'
+                      }`}
+                    >
+                      <p className="text-sm text-gray-300">{currentQuiz.explanation}</p>
+                    </motion.div>
+                  )}
 
-              {showExplanation && (
-                <button
-                  onClick={handleNextQuiz}
-                  className="w-full py-3 rounded-lg font-medium text-white transition"
-                  style={{ backgroundColor: levelColor }}
-                >
-                  {currentQuizIndex < quiz.length - 1 ? 'Следующая задача →' : 'Показать результат'}
-                </button>
-              )}
+                  {showExplanation && (
+                    <button
+                      onClick={handleNextQuiz}
+                      className="w-full py-3 rounded-lg font-medium text-white transition"
+                      style={{ backgroundColor: levelColor }}
+                    >
+                      {currentQuizIndex < quiz.length - 1 ? 'Следующая задача →' : 'Показать результат'}
+                    </button>
+                  )}
+                </div>
               ) : null}
             </div>
           )}
