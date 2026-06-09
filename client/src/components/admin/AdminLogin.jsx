@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from '../../firebase/config';
+import AdminPasswordReset from './AdminPasswordReset';
 
 function AdminLogin({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,6 +39,10 @@ function AdminLogin({ onLogin }) {
       setLoading(false);
     }
   };
+
+  if (showReset) {
+    return <AdminPasswordReset onClose={() => setShowReset(false)} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950">
@@ -94,6 +100,12 @@ function AdminLogin({ onLogin }) {
             {loading ? 'Вход...' : 'Войти'}
           </button>
         </form>
+
+        <p className="text-gray-500 text-xs text-center mt-4">
+          <button onClick={() => setShowReset(true)} className="text-[#00ff88] hover:underline">
+            Забыли пароль?
+          </button>
+        </p>
       </motion.div>
     </div>
   );
