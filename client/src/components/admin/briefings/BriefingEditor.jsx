@@ -16,11 +16,9 @@ function BriefingEditor({ briefingId, onBack }) {
 
   const loadBriefing = async () => {
     try {
-      const docRef = doc(db, 'briefings', briefingId);
-      const docSnap = await getDoc(docRef);
+      const docSnap = await getDoc(doc(db, 'briefings', briefingId));
       if (docSnap.exists()) {
-        const data = { id: docSnap.id, ...docSnap.data() };
-        setBriefing(data);
+        setBriefing(docSnap.data());
       }
     } catch (error) {
       console.error('Error loading briefing:', error);
@@ -45,6 +43,7 @@ function BriefingEditor({ briefingId, onBack }) {
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
       console.error('Error saving briefing:', error);
+      alert('Ошибка сохранения: ' + error.message);
     } finally {
       setSaving(false);
     }
