@@ -7,7 +7,7 @@ function BriefingEditor({ briefingId, onBack }) {
   const [briefing, setBriefing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [formData, setFormData] = useState({});
   const [activeSection, setActiveSection] = useState(null);
 
@@ -32,21 +32,25 @@ function BriefingEditor({ briefingId, onBack }) {
   };
 
   const handleSave = async () => {
+    if (!formData.title?.trim()) { alert('Название не может быть пустым'); return; }
+    if (!formData.scenario?.role?.trim()) { alert('Роль не может быть пустой'); return; }
+    if (!formData.scenario?.company?.trim()) { alert('Компания не может быть пустой'); return; }
+    if (!formData.scenario?.situation?.trim()) { alert('Ситуация не может быть пустой'); return; }
+    if (!formData.scenario?.goal?.trim()) { alert('Цель не может быть пустой'); return; }
+
     setSaving(true);
+    setSaved(false);
     try {
       const docRef = doc(db, 'briefings', briefingId);
       await updateDoc(docRef, formData);
       setBriefing(formData);
-      setEditMode(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch (error) {
       console.error('Error saving briefing:', error);
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleFieldChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
   };
 
   const handleScenarioChange = (field, value) => {
@@ -92,43 +96,35 @@ function BriefingEditor({ briefingId, onBack }) {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <button onClick={onBack} className="text-gray-400 hover:text-white mb-2 block">
-            ← Назад к брифингам
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onBack}
+            className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition"
+          >
+            ← Назад
           </button>
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">{briefing.icon || '📄'}</span>
-            <div>
-              <h2 className="text-3xl font-bold text-white">{briefing.title}</h2>
-              <p className="text-gray-400">{briefing.subtitle}</p>
-            </div>
+          <div>
+            <h2 className="text-3xl font-bold text-white">{briefing.title}</h2>
+            <p className="text-gray-400 text-sm">{briefing.subtitle}</p>
           </div>
         </div>
-        <div className="flex gap-3">
-          {editMode ? (
-            <>
-              <button
-                onClick={() => setEditMode(false)}
-                className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {saving ? 'Сохранение...' : 'Сохранить'}
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setEditMode(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        <div className="flex items-center gap-4">
+          {saved && (
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-green-400 text-sm"
             >
-              Редактировать
-            </button>
+              ✓ Сохранено!
+            </motion.span>
           )}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+          >
+            {saving ? 'Сохранение...' : 'Сохранить'}
+          </button>
         </div>
       </div>
 
@@ -151,55 +147,39 @@ function BriefingEditor({ briefingId, onBack }) {
             <div className="px-6 py-4 border-t border-gray-800 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Роль</label>
-                {editMode ? (
-                  <input
-                    type="text"
-                    value={formData.scenario?.role || ''}
-                    onChange={(e) => handleScenarioChange('role', e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                  />
-                ) : (
-                  <p className="text-white">{briefing.scenario?.role}</p>
-                )}
+                <input
+                  type="text"
+                  value={formData.scenario?.role || ''}
+                  onChange={(e) => handleScenarioChange('role', e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Компания</label>
-                {editMode ? (
-                  <input
-                    type="text"
-                    value={formData.scenario?.company || ''}
-                    onChange={(e) => handleScenarioChange('company', e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                  />
-                ) : (
-                  <p className="text-white">{briefing.scenario?.company}</p>
-                )}
+                <input
+                  type="text"
+                  value={formData.scenario?.company || ''}
+                  onChange={(e) => handleScenarioChange('company', e.target.value)}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Ситуация</label>
-                {editMode ? (
-                  <textarea
-                    value={formData.scenario?.situation || ''}
-                    onChange={(e) => handleScenarioChange('situation', e.target.value)}
-                    rows={3}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                  />
-                ) : (
-                  <p className="text-gray-300 whitespace-pre-wrap text-sm">{briefing.scenario?.situation}</p>
-                )}
+                <textarea
+                  value={formData.scenario?.situation || ''}
+                  onChange={(e) => handleScenarioChange('situation', e.target.value)}
+                  rows={3}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Цель</label>
-                {editMode ? (
-                  <textarea
-                    value={formData.scenario?.goal || ''}
-                    onChange={(e) => handleScenarioChange('goal', e.target.value)}
-                    rows={2}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
-                  />
-                ) : (
-                  <p className="text-gray-300 whitespace-pre-wrap text-sm">{briefing.scenario?.goal}</p>
-                )}
+                <textarea
+                  value={formData.scenario?.goal || ''}
+                  onChange={(e) => handleScenarioChange('goal', e.target.value)}
+                  rows={2}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
+                />
               </div>
             </div>
           )}
@@ -227,44 +207,32 @@ function BriefingEditor({ briefingId, onBack }) {
                 <div key={index} className="bg-gray-800 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-xl">{concept.icon || '📌'}</span>
-                    {editMode ? (
-                      <input
-                        type="text"
-                        value={formData.concepts?.[index]?.term || ''}
-                        onChange={(e) => handleConceptChange(index, 'term', e.target.value)}
-                        className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                        placeholder="Термин"
-                      />
-                    ) : (
-                      <h4 className="text-white font-medium">{concept.term}</h4>
-                    )}
+                    <input
+                      type="text"
+                      value={formData.concepts?.[index]?.term || ''}
+                      onChange={(e) => handleConceptChange(index, 'term', e.target.value)}
+                      className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                      placeholder="Термин"
+                    />
                   </div>
                   <div className="space-y-2 ml-8">
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Определение</label>
-                      {editMode ? (
-                        <textarea
-                          value={formData.concepts?.[index]?.definition || ''}
-                          onChange={(e) => handleConceptChange(index, 'definition', e.target.value)}
-                          rows={2}
-                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                        />
-                      ) : (
-                        <p className="text-gray-300 text-sm">{concept.definition}</p>
-                      )}
+                      <textarea
+                        value={formData.concepts?.[index]?.definition || ''}
+                        onChange={(e) => handleConceptChange(index, 'definition', e.target.value)}
+                        rows={2}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                      />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Пример</label>
-                      {editMode ? (
-                        <textarea
-                          value={formData.concepts?.[index]?.example || ''}
-                          onChange={(e) => handleConceptChange(index, 'example', e.target.value)}
-                          rows={2}
-                          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
-                        />
-                      ) : (
-                        <p className="text-gray-400 text-sm italic">{concept.example}</p>
-                      )}
+                      <textarea
+                        value={formData.concepts?.[index]?.example || ''}
+                        onChange={(e) => handleConceptChange(index, 'example', e.target.value)}
+                        rows={2}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
+                      />
                     </div>
                   </div>
                 </div>
@@ -294,30 +262,21 @@ function BriefingEditor({ briefingId, onBack }) {
               {(briefing.stages || []).map((stage, index) => (
                 <div key={index} className="bg-gray-800 rounded-lg p-3 flex items-center gap-4">
                   <span className="text-xl">{stage.icon || ''}</span>
-                  <div className="flex-1">
-                    {editMode ? (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={formData.stages?.[index]?.name || ''}
-                          onChange={(e) => handleStageChange(index, 'name', e.target.value)}
-                          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
-                          placeholder="Название"
-                        />
-                        <input
-                          type="text"
-                          value={formData.stages?.[index]?.desc || ''}
-                          onChange={(e) => handleStageChange(index, 'desc', e.target.value)}
-                          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
-                          placeholder="Описание"
-                        />
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-white text-sm font-medium">{stage.name}</p>
-                        <p className="text-gray-400 text-xs">{stage.desc}</p>
-                      </div>
-                    )}
+                  <div className="flex gap-2 flex-1">
+                    <input
+                      type="text"
+                      value={formData.stages?.[index]?.name || ''}
+                      onChange={(e) => handleStageChange(index, 'name', e.target.value)}
+                      className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
+                      placeholder="Название"
+                    />
+                    <input
+                      type="text"
+                      value={formData.stages?.[index]?.desc || ''}
+                      onChange={(e) => handleStageChange(index, 'desc', e.target.value)}
+                      className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
+                      placeholder="Описание"
+                    />
                   </div>
                 </div>
               ))}

@@ -114,6 +114,31 @@ export function subscribeToLevels(callback) {
 }
 
 /**
+ * Real-time подписка на брифинги
+ */
+export function subscribeToBriefings(callback) {
+  if (isFirebaseConfigured && db) {
+    return onSnapshot(collection(db, 'briefings'), (snapshot) => {
+      if (!snapshot.empty) {
+        const briefings = {};
+        snapshot.forEach(d => {
+          briefings[d.id] = { id: d.id, ...d.data() };
+        });
+        briefingsCache = briefings;
+        callback(briefings);
+      } else {
+        callback(staticBriefings);
+      }
+    }, (error) => {
+      console.warn('Firestore subscription error, using static data:', error);
+      callback(staticBriefings);
+    });
+  }
+  callback(staticBriefings);
+  return () => {};
+}
+
+/**
  * Real-time подписка на квизы
  */
 export function subscribeToQuizzes(callback) {

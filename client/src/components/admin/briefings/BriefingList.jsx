@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
+import { getBriefings } from '../../../services/DataService';
 
 function BriefingList({ onSelectBriefing }) {
   const [briefings, setBriefings] = useState([]);
@@ -13,12 +12,8 @@ function BriefingList({ onSelectBriefing }) {
 
   const loadBriefings = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'briefings'));
-      const briefingsData = [];
-      querySnapshot.forEach((doc) => {
-        briefingsData.push({ id: doc.id, ...doc.data() });
-      });
-      setBriefings(briefingsData);
+      const data = await getBriefings();
+      setBriefings(Object.values(data));
     } catch (error) {
       console.error('Error loading briefings:', error);
     } finally {
