@@ -25,6 +25,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
   const [stageResult, setStageResult] = useState(null);
   const [quiz, setQuiz] = useState([]);
   const [quizLoading, setQuizLoading] = useState(false);
+  const [quizSource, setQuizSource] = useState('');
 
   useEffect(() => {
     loadQuiz();
@@ -32,21 +33,20 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
 
   const loadQuiz = async () => {
     const quizId = checkpoint.quizId || `${checkpoint.id}-quiz`;
-    console.log('[CheckpointScene] Loading quiz:', quizId, 'checkpoint.quizId:', checkpoint.quizId);
     setQuizLoading(true);
+    setQuizSource('loading...');
     try {
       const quizData = await getQuiz(quizId);
-      console.log('[CheckpointScene] getQuiz result:', quizData);
       if (quizData && quizData.questions && quizData.questions.length > 0) {
-        console.log('[CheckpointScene] Using Firestore data, questions:', quizData.questions.length);
         setQuiz(quizData.questions);
+        setQuizSource('Firestore ✓');
       } else {
-        console.log('[CheckpointScene] Fallback to static data, questions:', (checkpoint.quiz || []).length);
         setQuiz(checkpoint.quiz || []);
+        setQuizSource('Static (fallback)');
       }
     } catch (error) {
-      console.error('[CheckpointScene] Error loading quiz:', error);
       setQuiz(checkpoint.quiz || []);
+      setQuizSource('Error - using static');
     } finally {
       setQuizLoading(false);
     }
@@ -180,6 +180,11 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
           {/* Quiz Step */}
           {currentStep === 'quiz' && (
             <div>
+              {/* Debug indicator */}
+              <div className="mb-4 p-2 bg-gray-800 rounded text-xs font-mono">
+                Quiz ID: {checkpoint.quizId || `${checkpoint.id}-quiz`} | Source: {quizSource || 'loading...'} | Questions: {quiz.length}
+              </div>
+              
               {quizLoading ? (
                 <div className="text-center py-8">
                   <div className="text-gray-400">Загрузка квиза...</div>

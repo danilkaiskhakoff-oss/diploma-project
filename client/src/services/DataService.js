@@ -285,7 +285,15 @@ export async function runMigration() {
   // Миграция уровней
   console.log('Миграция уровней...');
   for (const [id, level] of Object.entries(staticLevels)) {
-    await setDoc(firestoreDoc(db, 'levels', id), level);
+    // Добавляем quizId к каждому чекпоинту
+    const levelWithQuizIds = {
+      ...level,
+      checkpoints: level.checkpoints.map(cp => ({
+        ...cp,
+        quizId: cp.quiz && cp.quiz.length > 0 ? `${cp.id}-quiz` : undefined
+      }))
+    };
+    await setDoc(firestoreDoc(db, 'levels', id), levelWithQuizIds);
     console.log(`  ✓ Уровень: ${id} (${level.checkpoints.length} чекпоинтов)`);
   }
 
