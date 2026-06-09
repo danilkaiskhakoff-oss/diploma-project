@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
@@ -9,6 +9,7 @@ function BriefingEditor({ briefingId, onBack }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [activeSection, setActiveSection] = useState(null);
+  const briefingRef = useRef(null);
 
   useEffect(() => {
     loadBriefing();
@@ -16,33 +17,44 @@ function BriefingEditor({ briefingId, onBack }) {
 
   const loadBriefing = async () => {
     try {
+      console.log('[BriefingEditor] Loading briefing:', briefingId);
       const docSnap = await getDoc(doc(db, 'briefings', briefingId));
       if (docSnap.exists()) {
-        setBriefing(docSnap.data());
+        const data = docSnap.data();
+        console.log('[BriefingEditor] Loaded:', data);
+        setBriefing(data);
+        briefingRef.current = data;
+      } else {
+        console.log('[BriefingEditor] Document does not exist');
       }
     } catch (error) {
-      console.error('Error loading briefing:', error);
+      console.error('[BriefingEditor] Error loading briefing:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!briefing.title?.trim()) { alert('Название не может быть пустым'); return; }
-    if (!briefing.scenario?.role?.trim()) { alert('Роль не может быть пустой'); return; }
-    if (!briefing.scenario?.company?.trim()) { alert('Компания не может быть пустой'); return; }
-    if (!briefing.scenario?.situation?.trim()) { alert('Ситуация не может быть пустой'); return; }
-    if (!briefing.scenario?.goal?.trim()) { alert('Цель не может быть пустой'); return; }
+    const dataToSave = briefingRef.current;
+    console.log('[BriefingEditor] handleSave called, dataToSave:', dataToSave);
+
+    if (!dataToSave.title?.trim()) { alert('Название не может быть пустым'); return; }
+    if (!dataToSave.scenario?.role?.trim()) { alert('Роль не может быть пустой'); return; }
+    if (!dataToSave.scenario?.company?.trim()) { alert('Компания не может быть пустой'); return; }
+    if (!dataToSave.scenario?.situation?.trim()) { alert('Ситуация не может быть пустой'); return; }
+    if (!dataToSave.scenario?.goal?.trim()) { alert('Цель не может быть пустой'); return; }
 
     setSaving(true);
     setSaved(false);
     try {
       const docRef = doc(db, 'briefings', briefingId);
-      await updateDoc(docRef, briefing);
+      console.log('[BriefingEditor] Saving to Firestore:', briefingId, dataToSave);
+      await updateDoc(docRef, dataToSave);
+      console.log('[BriefingEditor] Save succeeded');
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
-      console.error('Error saving briefing:', error);
+      console.error('[BriefingEditor] Error saving briefing:', error);
       alert('Ошибка сохранения: ' + error.message);
     } finally {
       setSaving(false);
@@ -50,17 +62,22 @@ function BriefingEditor({ briefingId, onBack }) {
   };
 
   const handleScenarioChange = (field, value) => {
-    setBriefing(prev => ({
-      ...prev,
-      scenario: { ...prev.scenario, [field]: value },
-    }));
+    console.log('[BriefingEditor] handleScenarioChange:', field, '=', value);
+    setBriefing(prev => {
+      const next = { ...prev, scenario: { ...prev.scenario, [field]: value } };
+      briefingRef.current = next;
+      console.log('[BriefingEditor] Updated briefing:', next);
+      return next;
+    });
   };
 
   const handleConceptChange = (index, field, value) => {
     setBriefing(prev => {
       const updatedConcepts = [...(prev.concepts || [])];
       updatedConcepts[index] = { ...(updatedConcepts[index] || {}), [field]: value };
-      return { ...prev, concepts: updatedConcepts };
+      const next = { ...prev, concepts: updatedConcepts };
+      briefingRef.current = next;
+      return next;
     });
   };
 
@@ -68,7 +85,9 @@ function BriefingEditor({ briefingId, onBack }) {
     setBriefing(prev => {
       const updatedStages = [...(prev.stages || [])];
       updatedStages[index] = { ...(updatedStages[index] || {}), [field]: value };
-      return { ...prev, stages: updatedStages };
+      const next = { ...prev, stages: updatedStages };
+      briefingRef.current = next;
+      return next;
     });
   };
 
