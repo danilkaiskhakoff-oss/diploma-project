@@ -6,7 +6,7 @@ const menuItems = [
   { id: 'levels', icon: '', label: 'Уровни' },
   { id: 'briefings', icon: '', label: 'Брифинги' },
   { id: 'users', icon: '', label: 'Пользователи' },
-  { id: 'ui-config', icon: '', label: 'Тема' }
+  // { id: 'ui-config', icon: '', label: 'Тема' }
 ];
 
 function AdminSidebar({ activeSection, onNavigate, onLogout }) {
