@@ -62,15 +62,13 @@ function BriefingEditor({ briefingId, onBack }) {
 
   const handleConceptChange = (index, field, value) => {
     const updatedConcepts = [...(formData.concepts || [])];
-    if (!updatedConcepts[index]) updatedConcepts[index] = {};
-    updatedConcepts[index][field] = value;
+    updatedConcepts[index] = { ...(updatedConcepts[index] || {}), [field]: value };
     setFormData({ ...formData, concepts: updatedConcepts });
   };
 
   const handleStageChange = (index, field, value) => {
     const updatedStages = [...(formData.stages || [])];
-    if (!updatedStages[index]) updatedStages[index] = {};
-    updatedStages[index][field] = value;
+    updatedStages[index] = { ...(updatedStages[index] || {}), [field]: value };
     setFormData({ ...formData, stages: updatedStages });
   };
 
