@@ -1,15 +1,42 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { briefings } from '../../data/briefings';
+import { getBriefing } from '../../services/DataService';
 
 function AdvancedBriefing({ simulationType, onComplete }) {
-  const briefing = briefings[simulationType];
+  const [briefing, setBriefing] = useState(null);
+  const [loading, setLoading] = useState(true);
   const audioContextRef = useRef(null);
   const [currentSection, setCurrentSection] = useState(0);
   const [expandedConcept, setExpandedConcept] = useState(null);
   const [hasViewed, setHasViewed] = useState(false);
 
   const totalSections = 4;
+
+  useEffect(() => {
+    loadBriefing();
+  }, [simulationType]);
+
+  const loadBriefing = async () => {
+    try {
+      const data = await getBriefing(simulationType);
+      setBriefing(data);
+    } catch (e) {
+      console.error('Failed to load briefing:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <div className="text-4xl mb-4 animate-spin">⏳</div>
+          <p className="text-gray-400">Загрузка брифинга...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!briefing) {
     return (
