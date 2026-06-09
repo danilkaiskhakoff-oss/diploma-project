@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const phishingEmail = {
   from: 'security@company-support.ru',
   fromName: 'IT Отдел',
-  subject: '⚠️ Срочно: Смените пароль от учётной записи!',
+  subject: '️ Срочно: Смените пароль от учётной записи!',
   date: 'Сегодня, 09:15',
   body: `Уважаемый сотрудник!
 
@@ -18,7 +18,6 @@ http://company-support.ru/password-reset
 IT Отдел компании`,
   suspiciousElements: [
     { id: 'sender', text: 'security@company-support.ru', reason: 'Поддельный домен. Настоящий IT отдел использует @company.ru' },
-    { id: 'urgency', text: 'в течение 2 часов', reason: 'Срочность — манипуляция для паники' },
     { id: 'link', text: 'http://company-support.ru', reason: 'Ссылка ведёт на поддельный сайт, не на внутренний портал' },
     { id: 'threat', text: 'учётная запись будет заблокирована', reason: 'Угроза блокировки — давление на жертву' }
   ]
