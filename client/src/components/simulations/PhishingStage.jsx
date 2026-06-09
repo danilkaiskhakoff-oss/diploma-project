@@ -42,6 +42,52 @@ function PhishingStage({ onComplete }) {
     onComplete({ score, max: phishingEmail.suspiciousElements.length });
   };
 
+  const renderBodyLine = (line, index) => {
+    const elementsOnLine = phishingEmail.suspiciousElements.filter(el => line.includes(el.text));
+    
+    if (elementsOnLine.length === 0) {
+      return <span key={index}>{line}</span>;
+    }
+
+    let remaining = line;
+    const parts = [];
+    let keyIndex = 0;
+
+    elementsOnLine.forEach((element, elIdx) => {
+      const pos = remaining.indexOf(element.text);
+      if (pos === -1) return;
+
+      if (pos > 0) {
+        parts.push(<span key={`text-${keyIndex++}`}>{remaining.slice(0, pos)}</span>);
+      }
+
+      const isFound = found[element.id];
+      parts.push(
+        isFound ? (
+          <span key={`found-${element.id}`} className="inline-block px-1 py-0.5 bg-green-100 text-green-700 rounded">
+            {element.text}
+          </span>
+        ) : (
+          <button
+            key={`btn-${element.id}`}
+            onClick={() => handleFind(element.id)}
+            className="inline-block px-1 py-0.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition cursor-pointer"
+          >
+            {element.text}
+          </button>
+        )
+      );
+
+      remaining = remaining.slice(pos + element.text.length);
+    });
+
+    if (remaining) {
+      parts.push(<span key={`text-end-${keyIndex++}`}>{remaining}</span>);
+    }
+
+    return <div key={index}>{parts}</div>;
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       {/* Header */}
@@ -65,7 +111,16 @@ function PhishingStage({ onComplete }) {
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-sm text-gray-600">От: <span className="font-medium text-gray-800">{phishingEmail.fromName}</span></p>
-              <p className="text-xs text-gray-700">{phishingEmail.from}</p>
+              {!found['sender'] ? (
+                <button
+                  onClick={() => handleFind('sender')}
+                  className="text-xs text-red-600 hover:text-red-800 underline cursor-pointer"
+                >
+                  {phishingEmail.from}
+                </button>
+              ) : (
+                <span className="text-xs text-green-600">{phishingEmail.from}</span>
+              )}
             </div>
             <p className="text-xs text-gray-700">{phishingEmail.date}</p>
           </div>
@@ -75,29 +130,7 @@ function PhishingStage({ onComplete }) {
         {/* Email Body */}
         <div className="p-4">
           <div className="text-sm text-gray-700 whitespace-pre-line">
-            {phishingEmail.body.split('\n').map((line, index) => {
-              const isSuspicious = phishingEmail.suspiciousElements.some(el => line.includes(el.text));
-              const element = phishingEmail.suspiciousElements.find(el => line.includes(el.text));
-
-              return (
-                <div key={index} className="mb-1">
-                  {element && !found[element.id] ? (
-                    <button
-                      onClick={() => handleFind(element.id)}
-                      className="inline-block px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition cursor-pointer"
-                    >
-                      {line}
-                    </button>
-                  ) : element && found[element.id] ? (
-                    <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded">
-                      {line}
-                    </span>
-                  ) : (
-                    <span>{line}</span>
-                  )}
-                </div>
-              );
-            })}
+            {phishingEmail.body.split('\n').map(renderBodyLine)}
           </div>
         </div>
 
