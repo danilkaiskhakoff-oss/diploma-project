@@ -191,20 +191,29 @@ export async function getBriefing(briefingId) {
  * Загружает один квиз по ID
  */
 export async function getQuiz(quizId) {
+  console.log('[DataService.getQuiz] Called with quizId:', quizId);
+  console.log('[DataService.getQuiz] isFirebaseConfigured:', isFirebaseConfigured, 'db:', !!db);
+  
   if (isFirebaseConfigured && db) {
     try {
       const docSnap = await getDoc(doc(db, 'quizzes', quizId));
+      console.log('[DataService.getQuiz] Firestore doc exists:', docSnap.exists());
       if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() };
+        const data = { id: docSnap.id, ...docSnap.data() };
+        console.log('[DataService.getQuiz] Returning Firestore data, questions:', data.questions?.length);
+        return data;
       }
     } catch (error) {
-      console.warn('Failed to load quiz from Firestore:', error);
+      console.warn('[DataService.getQuiz] Firestore error:', error);
     }
   }
+  
+  console.log('[DataService.getQuiz] Fallback to static data');
   // Fallback: find in static levels
   for (const level of Object.values(staticLevels)) {
     for (const cp of level.checkpoints) {
       if (cp.id + '-quiz' === quizId && cp.quiz) {
+        console.log('[DataService.getQuiz] Found in static levels:', cp.id);
         return {
           id: quizId,
           title: cp.title,
@@ -215,6 +224,7 @@ export async function getQuiz(quizId) {
       }
     }
   }
+  console.log('[DataService.getQuiz] Not found anywhere, returning null');
   return null;
 }
 

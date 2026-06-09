@@ -32,16 +32,20 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
 
   const loadQuiz = async () => {
     const quizId = checkpoint.quizId || `${checkpoint.id}-quiz`;
+    console.log('[CheckpointScene] Loading quiz:', quizId, 'checkpoint.quizId:', checkpoint.quizId);
     setQuizLoading(true);
     try {
       const quizData = await getQuiz(quizId);
+      console.log('[CheckpointScene] getQuiz result:', quizData);
       if (quizData && quizData.questions && quizData.questions.length > 0) {
+        console.log('[CheckpointScene] Using Firestore data, questions:', quizData.questions.length);
         setQuiz(quizData.questions);
       } else {
+        console.log('[CheckpointScene] Fallback to static data, questions:', (checkpoint.quiz || []).length);
         setQuiz(checkpoint.quiz || []);
       }
     } catch (error) {
-      console.error('Error loading quiz from Firestore, using static data:', error);
+      console.error('[CheckpointScene] Error loading quiz:', error);
       setQuiz(checkpoint.quiz || []);
     } finally {
       setQuizLoading(false);
