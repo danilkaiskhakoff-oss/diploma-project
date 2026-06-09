@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDocFromServer, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 
 function BriefingEditor({ briefingId, onBack }) {
@@ -18,7 +18,7 @@ function BriefingEditor({ briefingId, onBack }) {
   const loadBriefing = async () => {
     try {
       console.log('[BriefingEditor] Loading briefing:', briefingId);
-      const docSnap = await getDoc(doc(db, 'briefings', briefingId));
+      const docSnap = await getDocFromServer(doc(db, 'briefings', briefingId));
       if (docSnap.exists()) {
         const data = docSnap.data();
         console.log('[BriefingEditor] Loaded:', data);
