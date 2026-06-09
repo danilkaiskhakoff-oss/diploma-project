@@ -99,7 +99,7 @@ function PhishingStage({ onComplete }) {
           </div>
         </div>
         <p className="text-sm text-gray-300">
-          Найдите подозрительные элементы в письме. Кликайте на опасные части текста.
+          Найдите 3 подозрительных элемента в письме. Кликайте на опасные части текста.
         </p>
       </div>
 
@@ -113,12 +113,14 @@ function PhishingStage({ onComplete }) {
               {!found['sender'] ? (
                 <button
                   onClick={() => handleFind('sender')}
-                  className="text-xs text-red-600 hover:text-red-800 underline cursor-pointer"
+                  className="inline-block px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition cursor-pointer"
                 >
                   {phishingEmail.from}
                 </button>
               ) : (
-                <span className="text-xs text-green-600">{phishingEmail.from}</span>
+                <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded">
+                  {phishingEmail.from}
+                </span>
               )}
             </div>
             <p className="text-xs text-gray-700">{phishingEmail.date}</p>
