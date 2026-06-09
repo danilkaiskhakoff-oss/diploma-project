@@ -277,7 +277,7 @@ export async function runMigration() {
     throw new Error('Firebase не настроен');
   }
 
-  const { setDoc, doc: firestoreDoc } = await import('firebase/firestore');
+  const { setDoc, doc: firestoreDoc, getDoc } = await import('firebase/firestore');
   let totalQuizzes = 0;
 
   console.log('=== Начало миграции данных в Firebase ===\n');
@@ -304,21 +304,29 @@ export async function runMigration() {
     console.log(`  ✓ Брифинг: ${id}`);
   }
 
-  // Миграция квизов
+  // Миграция квизов (только если документ не существует)
   console.log('\nМиграция квизов...');
   for (const [levelId, level] of Object.entries(staticLevels)) {
     for (const cp of level.checkpoints) {
       if (cp.quiz && cp.quiz.length > 0) {
         const quizId = `${cp.id}-quiz`;
-        const quizData = {
-          title: cp.title,
-          description: `Квиз по теме "${cp.title}"`,
-          levelId: levelId,
-          levelName: level.name,
-          questions: cp.quiz
-        };
-        await setDoc(firestoreDoc(db, 'quizzes', quizId), quizData);
-        console.log(`  ✓ Квиз: ${quizId} (${cp.quiz.length} вопросов, уровень: ${level.name})`);
+        const quizRef = firestoreDoc(db, 'quizzes', quizId);
+        const quizSnap = await getDoc(quizRef);
+        
+        if (!quizSnap.exists()) {
+          // Создаём только если не существует
+          const quizData = {
+            title: cp.title,
+            description: `Квиз по теме "${cp.title}"`,
+            levelId: levelId,
+            levelName: level.name,
+            questions: cp.quiz
+          };
+          await setDoc(quizRef, quizData);
+          console.log(`  ✓ Квиз создан: ${quizId} (${cp.quiz.length} вопросов)`);
+        } else {
+          console.log(`  ⊘ Квиз уже существует: ${quizId} (пропущен)`);
+        }
         totalQuizzes++;
       }
     }
