@@ -7,6 +7,7 @@ export const levels = {
     checkpoints: [
       {
         id: 'cyber-basics',
+        quizId: 'cyber-basics-quiz',
         title: 'Основы кибербезопасности',
         type: 'simulation',
         simulation: {
@@ -57,6 +58,7 @@ export const levels = {
       },
       {
         id: 'phishing',
+        quizId: 'phishing-quiz',
         title: 'Фишинг',
         type: 'simulation',
         simulation: {
@@ -208,6 +210,7 @@ export const levels = {
       },
       {
         id: 'passwords',
+        quizId: 'passwords-quiz',
         title: 'Пароли',
         type: 'simulation',
         simulation: {
@@ -316,6 +319,7 @@ export const levels = {
       },
       {
         id: 'data-protection',
+        quizId: 'data-protection-quiz',
         title: 'Защита данных',
         type: 'simulation',
         simulation: {
@@ -387,6 +391,7 @@ export const levels = {
       },
       {
         id: 'social-media',
+        quizId: 'social-media-quiz',
         title: 'Безопасность в соцсетях',
         type: 'simulation',
         simulation: {
@@ -450,6 +455,7 @@ export const levels = {
     checkpoints: [
       {
         id: 'network-attacks',
+        quizId: 'network-attacks-quiz',
         title: 'Сетевые атаки',
         type: 'simulation',
         simulation: {
@@ -504,6 +510,7 @@ export const levels = {
       },
       {
         id: 'social-engineering',
+        quizId: 'social-engineering-quiz',
         title: 'Социальная инженерия',
         type: 'simulation',
         simulation: {
@@ -557,6 +564,7 @@ export const levels = {
       },
       {
         id: 'malware',
+        quizId: 'malware-quiz',
         title: 'Вирусы и малварь',
         type: 'simulation',
         simulation: {
@@ -612,6 +620,7 @@ export const levels = {
       },
       {
         id: 'wifi-security',
+        quizId: 'wifi-security-quiz',
         title: 'Безопасность Wi-Fi',
         type: 'simulation',
         simulation: {
@@ -671,6 +680,7 @@ export const levels = {
       },
       {
         id: 'insider-threats',
+        quizId: 'insider-threats-quiz',
         title: 'Инсайдерские угрозы',
         type: 'simulation',
         simulation: {
@@ -725,6 +735,7 @@ export const levels = {
     checkpoints: [
       {
         id: 'ddos',
+        quizId: 'ddos-quiz',
         title: 'DDoS-атаки',
         type: 'simulation',
         simulation: {
@@ -771,6 +782,7 @@ export const levels = {
       },
       {
         id: 'pentest',
+        quizId: 'pentest-quiz',
         title: 'Пентест',
         type: 'simulation',
         simulation: {
@@ -817,6 +829,7 @@ export const levels = {
       },
       {
         id: 'incident-response',
+        quizId: 'incident-response-quiz',
         title: 'Incident Response',
         type: 'simulation',
         simulation: {
@@ -859,6 +872,7 @@ export const levels = {
       },
       {
         id: 'osint',
+        quizId: 'osint-quiz',
         title: 'OSINT',
         type: 'simulation',
         simulation: {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Desktop from './simulations/Desktop';
 import PasswordSimulation from './simulations/PasswordSimulation';
@@ -14,6 +14,7 @@ import DDoSSimulation from './simulations/DDoSSimulation';
 import PentestSimulation from './simulations/PentestSimulation';
 import IRSimulation from './simulations/IRSimulation';
 import OSINTSimulation from './simulations/OSINTSimulation';
+import { getQuiz } from '../services/DataService';
 
 function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
   const [currentStep, setCurrentStep] = useState('theory');
@@ -22,8 +23,31 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
   const [stageResult, setStageResult] = useState(null);
+  const [quiz, setQuiz] = useState([]);
+  const [quizLoading, setQuizLoading] = useState(false);
 
-  const quiz = checkpoint.quiz || [];
+  useEffect(() => {
+    loadQuiz();
+  }, [checkpoint.id]);
+
+  const loadQuiz = async () => {
+    const quizId = checkpoint.quizId || `${checkpoint.id}-quiz`;
+    setQuizLoading(true);
+    try {
+      const quizData = await getQuiz(quizId);
+      if (quizData && quizData.questions && quizData.questions.length > 0) {
+        setQuiz(quizData.questions);
+      } else {
+        setQuiz(checkpoint.quiz || []);
+      }
+    } catch (error) {
+      console.error('Error loading quiz from Firestore, using static data:', error);
+      setQuiz(checkpoint.quiz || []);
+    } finally {
+      setQuizLoading(false);
+    }
+  };
+
   const currentQuiz = quiz[currentQuizIndex];
 
   const simulationComponents = {
@@ -150,8 +174,24 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
           )}
 
           {/* Quiz Step */}
-          {currentStep === 'quiz' && currentQuiz && (
+          {currentStep === 'quiz' && (
             <div>
+              {quizLoading ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400">Загрузка квиза...</div>
+                </div>
+              ) : quiz.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400">Квиз отсутствует</div>
+                  <button
+                    onClick={handleFinish}
+                    className="mt-4 px-6 py-2 rounded-lg font-medium text-white transition"
+                    style={{ backgroundColor: levelColor }}
+                  >
+                    Вернуться к карте
+                  </button>
+                </div>
+              ) : currentQuiz ? (
               <div className="flex justify-between items-center mb-4">
                 <span className="text-sm text-gray-400">Задача {currentQuizIndex + 1} из {quiz.length}</span>
                 <span className="text-sm font-bold" style={{ color: levelColor }}>Счёт: {score}</span>
@@ -202,6 +242,7 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
                   {currentQuizIndex < quiz.length - 1 ? 'Следующая задача →' : 'Показать результат'}
                 </button>
               )}
+              ) : null}
             </div>
           )}
 
