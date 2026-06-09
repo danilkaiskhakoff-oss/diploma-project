@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { doc, getDocFromServer, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 
 function BriefingEditor({ briefingId, onBack }) {
@@ -18,10 +18,10 @@ function BriefingEditor({ briefingId, onBack }) {
   const loadBriefing = async () => {
     try {
       console.log('[BriefingEditor] Loading briefing:', briefingId);
-      const docSnap = await getDocFromServer(doc(db, 'briefings', briefingId));
+      const docSnap = await getDoc(doc(db, 'briefings', briefingId), { source: 'server' });
       if (docSnap.exists()) {
         const data = docSnap.data();
-        console.log('[BriefingEditor] Loaded:', data);
+        console.log('[BriefingEditor] Loaded from server:', data);
         setBriefing(data);
         briefingRef.current = data;
       } else {
@@ -50,7 +50,9 @@ function BriefingEditor({ briefingId, onBack }) {
       const docRef = doc(db, 'briefings', briefingId);
       console.log('[BriefingEditor] Saving to Firestore:', briefingId, dataToSave);
       await updateDoc(docRef, dataToSave);
-      console.log('[BriefingEditor] Save succeeded');
+      console.log('[BriefingEditor] Save succeeded, updating UI');
+      setBriefing(dataToSave);
+      briefingRef.current = dataToSave;
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
