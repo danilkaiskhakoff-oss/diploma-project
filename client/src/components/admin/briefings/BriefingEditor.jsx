@@ -8,7 +8,6 @@ function BriefingEditor({ briefingId, onBack }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [formData, setFormData] = useState({});
   const [activeSection, setActiveSection] = useState(null);
 
   useEffect(() => {
@@ -22,7 +21,6 @@ function BriefingEditor({ briefingId, onBack }) {
       if (docSnap.exists()) {
         const data = { id: docSnap.id, ...docSnap.data() };
         setBriefing(data);
-        setFormData(data);
       }
     } catch (error) {
       console.error('Error loading briefing:', error);
@@ -32,18 +30,17 @@ function BriefingEditor({ briefingId, onBack }) {
   };
 
   const handleSave = async () => {
-    if (!formData.title?.trim()) { alert('Название не может быть пустым'); return; }
-    if (!formData.scenario?.role?.trim()) { alert('Роль не может быть пустой'); return; }
-    if (!formData.scenario?.company?.trim()) { alert('Компания не может быть пустой'); return; }
-    if (!formData.scenario?.situation?.trim()) { alert('Ситуация не может быть пустой'); return; }
-    if (!formData.scenario?.goal?.trim()) { alert('Цель не может быть пустой'); return; }
+    if (!briefing.title?.trim()) { alert('Название не может быть пустым'); return; }
+    if (!briefing.scenario?.role?.trim()) { alert('Роль не может быть пустой'); return; }
+    if (!briefing.scenario?.company?.trim()) { alert('Компания не может быть пустой'); return; }
+    if (!briefing.scenario?.situation?.trim()) { alert('Ситуация не может быть пустой'); return; }
+    if (!briefing.scenario?.goal?.trim()) { alert('Цель не может быть пустой'); return; }
 
     setSaving(true);
     setSaved(false);
     try {
       const docRef = doc(db, 'briefings', briefingId);
-      await updateDoc(docRef, formData);
-      setBriefing(formData);
+      await updateDoc(docRef, briefing);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
@@ -54,22 +51,26 @@ function BriefingEditor({ briefingId, onBack }) {
   };
 
   const handleScenarioChange = (field, value) => {
-    setFormData({
-      ...formData,
-      scenario: { ...formData.scenario, [field]: value },
-    });
+    setBriefing(prev => ({
+      ...prev,
+      scenario: { ...prev.scenario, [field]: value },
+    }));
   };
 
   const handleConceptChange = (index, field, value) => {
-    const updatedConcepts = [...(formData.concepts || [])];
-    updatedConcepts[index] = { ...(updatedConcepts[index] || {}), [field]: value };
-    setFormData({ ...formData, concepts: updatedConcepts });
+    setBriefing(prev => {
+      const updatedConcepts = [...(prev.concepts || [])];
+      updatedConcepts[index] = { ...(updatedConcepts[index] || {}), [field]: value };
+      return { ...prev, concepts: updatedConcepts };
+    });
   };
 
   const handleStageChange = (index, field, value) => {
-    const updatedStages = [...(formData.stages || [])];
-    updatedStages[index] = { ...(updatedStages[index] || {}), [field]: value };
-    setFormData({ ...formData, stages: updatedStages });
+    setBriefing(prev => {
+      const updatedStages = [...(prev.stages || [])];
+      updatedStages[index] = { ...(updatedStages[index] || {}), [field]: value };
+      return { ...prev, stages: updatedStages };
+    });
   };
 
   if (loading) {
@@ -147,7 +148,7 @@ function BriefingEditor({ briefingId, onBack }) {
                 <label className="block text-sm font-medium text-gray-400 mb-2">Роль</label>
                 <input
                   type="text"
-                  value={formData.scenario?.role || ''}
+                  value={briefing.scenario?.role || ''}
                   onChange={(e) => handleScenarioChange('role', e.target.value)}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
                 />
@@ -156,7 +157,7 @@ function BriefingEditor({ briefingId, onBack }) {
                 <label className="block text-sm font-medium text-gray-400 mb-2">Компания</label>
                 <input
                   type="text"
-                  value={formData.scenario?.company || ''}
+                  value={briefing.scenario?.company || ''}
                   onChange={(e) => handleScenarioChange('company', e.target.value)}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
                 />
@@ -164,7 +165,7 @@ function BriefingEditor({ briefingId, onBack }) {
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Ситуация</label>
                 <textarea
-                  value={formData.scenario?.situation || ''}
+                  value={briefing.scenario?.situation || ''}
                   onChange={(e) => handleScenarioChange('situation', e.target.value)}
                   rows={3}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
@@ -173,7 +174,7 @@ function BriefingEditor({ briefingId, onBack }) {
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Цель</label>
                 <textarea
-                  value={formData.scenario?.goal || ''}
+                  value={briefing.scenario?.goal || ''}
                   onChange={(e) => handleScenarioChange('goal', e.target.value)}
                   rows={2}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white"
@@ -207,7 +208,7 @@ function BriefingEditor({ briefingId, onBack }) {
                     <span className="text-xl">{concept.icon || '📌'}</span>
                     <input
                       type="text"
-                      value={formData.concepts?.[index]?.term || ''}
+                      value={briefing.concepts?.[index]?.term || ''}
                       onChange={(e) => handleConceptChange(index, 'term', e.target.value)}
                       className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
                       placeholder="Термин"
@@ -217,7 +218,7 @@ function BriefingEditor({ briefingId, onBack }) {
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Определение</label>
                       <textarea
-                        value={formData.concepts?.[index]?.definition || ''}
+                        value={briefing.concepts?.[index]?.definition || ''}
                         onChange={(e) => handleConceptChange(index, 'definition', e.target.value)}
                         rows={2}
                         className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
@@ -226,7 +227,7 @@ function BriefingEditor({ briefingId, onBack }) {
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Пример</label>
                       <textarea
-                        value={formData.concepts?.[index]?.example || ''}
+                        value={briefing.concepts?.[index]?.example || ''}
                         onChange={(e) => handleConceptChange(index, 'example', e.target.value)}
                         rows={2}
                         className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm"
@@ -263,14 +264,14 @@ function BriefingEditor({ briefingId, onBack }) {
                   <div className="flex gap-2 flex-1">
                     <input
                       type="text"
-                      value={formData.stages?.[index]?.name || ''}
+                      value={briefing.stages?.[index]?.name || ''}
                       onChange={(e) => handleStageChange(index, 'name', e.target.value)}
                       className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
                       placeholder="Название"
                     />
                     <input
                       type="text"
-                      value={formData.stages?.[index]?.desc || ''}
+                      value={briefing.stages?.[index]?.desc || ''}
                       onChange={(e) => handleStageChange(index, 'desc', e.target.value)}
                       className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-white text-sm"
                       placeholder="Описание"
