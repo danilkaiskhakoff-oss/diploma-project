@@ -180,11 +180,6 @@ function CheckpointScene({ checkpoint, levelColor, onClose, user }) {
           {/* Quiz Step */}
           {currentStep === 'quiz' && (
             <div>
-              {/* Debug indicator */}
-              <div className="mb-4 p-2 bg-gray-800 rounded text-xs font-mono">
-                Quiz ID: {checkpoint.quizId || `${checkpoint.id}-quiz`} | Source: {quizSource || 'loading...'} | Questions: {quiz.length}
-              </div>
-              
               {quizLoading ? (
                 <div className="text-center py-8">
                   <div className="text-gray-400">Загрузка квиза...</div>
