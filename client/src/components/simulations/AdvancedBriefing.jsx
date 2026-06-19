@@ -16,6 +16,17 @@ function AdvancedBriefing({ simulationType, onComplete }) {
     loadBriefing();
   }, [simulationType]);
 
+  useEffect(() => {
+    try {
+      const viewed = localStorage.getItem(`briefing_${simulationType}`);
+      if (viewed) {
+        setHasViewed(true);
+      }
+    } catch (e) {
+      // localStorage not available
+    }
+  }, [simulationType]);
+
   const loadBriefing = async () => {
     try {
       const data = await getBriefing(simulationType);
@@ -55,17 +66,6 @@ function AdvancedBriefing({ simulationType, onComplete }) {
       </div>
     );
   }
-
-  useEffect(() => {
-    try {
-      const viewed = localStorage.getItem(`briefing_${simulationType}`);
-      if (viewed) {
-        setHasViewed(true);
-      }
-    } catch (e) {
-      // localStorage not available
-    }
-  }, [simulationType]);
 
   const playSound = useCallback((type = 'click') => {
     try {
