@@ -38,35 +38,6 @@ function AdvancedBriefing({ simulationType, onComplete }) {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900">
-        <div className="text-center">
-          <div className="text-4xl mb-4 animate-spin">⏳</div>
-          <p className="text-gray-400">Загрузка брифинга...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!briefing) {
-    return (
-      <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⚠️</div>
-          <h2 className="text-xl text-white mb-2">Ошибка загрузки</h2>
-          <p className="text-gray-400">Не удалось загрузить брифинг</p>
-          <button
-            onClick={onComplete}
-            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Пропустить
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const playSound = useCallback((type = 'click') => {
     try {
       if (!audioContextRef.current) {
@@ -107,6 +78,35 @@ function AdvancedBriefing({ simulationType, onComplete }) {
       // Ignore audio errors
     }
   }, []);
+
+  if (loading) {
+    return (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <div className="text-4xl mb-4 animate-spin">⏳</div>
+          <p className="text-gray-400">Загрузка брифинга...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!briefing) {
+    return (
+      <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl text-white mb-2">Ошибка загрузки</h2>
+          <p className="text-gray-400">Не удалось загрузить брифинг</p>
+          <button
+            onClick={onComplete}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Пропустить
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleNext = () => {
     playSound('click');
